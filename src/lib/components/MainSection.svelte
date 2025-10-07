@@ -231,7 +231,7 @@
     try {
       const allPRs = [];
       let page = 1;
-      const perPage = 100; // Use larger page size for efficiency
+      const perPage = 1000; // Use larger page size for efficiency
 
       while (true) {
         const searchQuery = `repo:${$config.owner}/${$config.repo} is:pr is:open author:${$currentUser.login}${$searchTerm ? ` ${$searchTerm}` : ""}`;
