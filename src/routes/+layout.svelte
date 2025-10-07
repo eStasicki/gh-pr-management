@@ -2,6 +2,7 @@
   import "../app.css";
   import LanguageSwitcher from "$lib/components/LanguageSwitcher.svelte";
   import { page } from "$app/stores";
+  import UserAccount from "$lib/components/UserAccount.svelte";
 </script>
 
 <div
@@ -12,11 +13,16 @@
       class="bg-white rounded-2xl p-6 mb-6 shadow-2xl flex justify-between items-center"
     >
       <h1 class="text-3xl font-bold text-gray-800">GitHub PR Management</h1>
-      <LanguageSwitcher />
+      <div class="flex gap-3">
+        <UserAccount />
+      </div>
     </header>
 
     <main>
       <slot />
     </main>
+    <div class="flex justify-end">
+      <LanguageSwitcher />
+    </div>
   </div>
 </div>

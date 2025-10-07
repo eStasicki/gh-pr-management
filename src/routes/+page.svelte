@@ -31,12 +31,9 @@
 
   // Reactive statement to update showConfig when config changes (only in browser)
   $: if (browser) {
-    console.log("Config changed:", $config);
     if ($config.token && $config.owner && $config.repo) {
-      console.log("Config is complete, hiding config form");
       showConfig = false;
     } else {
-      console.log("Config is incomplete, showing config form");
       showConfig = true;
     }
   }

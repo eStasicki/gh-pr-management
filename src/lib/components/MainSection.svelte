@@ -297,47 +297,28 @@
 </script>
 
 <div class="bg-white rounded-2xl p-8 mb-6 shadow-2xl">
-  <div class="flex items-center gap-4 mb-6 p-4 bg-gray-50 rounded-xl">
-    <span class="text-gray-700">{t.logged_as}</span>
-    <strong class="text-primary-600">
-      {$currentUser?.login}
-      {#if $currentUser?.name}
-        ({$currentUser.name})
-      {/if}
-    </strong>
-    <button
-      on:click={logout}
-      class="ml-auto bg-gray-200 text-gray-700 px-4 py-2 rounded-lg font-semibold cursor-pointer transition-all duration-300 hover:bg-gray-300 hover:-translate-y-0.5 shadow-md"
-    >
-      {t.logout}
-    </button>
-  </div>
-
   <div class="mb-8">
     <div class="flex justify-between items-center mb-6">
       <h2 class="text-2xl font-bold text-gray-800">
         {t.my_prs}
       </h2>
-      <div
-        class="text-sm text-gray-600 font-medium px-3 py-2 bg-primary-100 rounded-lg"
-      >
-        <span>{t.secure_mode}</span>
-      </div>
     </div>
 
-    <div class="flex gap-4 mb-6 items-center justify-between">
+    <div
+      class="flex flex-col lg:flex-row gap-4 mb-6 items-center justify-between"
+    >
       <input
         type="text"
         placeholder={t.search_prs}
         bind:value={$searchTerm}
-        class="flex-1 max-w-sm px-4 py-3 border-2 border-gray-200 rounded-lg text-base transition-colors focus:outline-none focus:border-primary-500 focus:ring-4 focus:ring-primary-100"
+        class="flex-1 lg:max-w-sm px-4 py-3 border-2 border-gray-200 rounded-lg text-base transition-colors focus:outline-none focus:border-blue-500 w-full"
       />
 
       <!-- Actions Dropdown -->
-      <div class="relative" bind:this={actionsDropdown}>
+      <div class="relative w-full lg:w-auto" bind:this={actionsDropdown}>
         <button
           on:click={toggleActionsDropdown}
-          class="bg-blue-500 text-white px-4 py-3 rounded-lg font-semibold cursor-pointer transition-all duration-300 hover:bg-blue-600 flex items-center gap-2"
+          class="bg-blue-500 text-white px-4 py-3 rounded-lg font-semibold cursor-pointer transition-all duration-300 hover:bg-blue-600 flex items-center gap-2 w-full lg:w-auto"
         >
           <svg
             class="w-4 h-4"
@@ -352,9 +333,9 @@
               d="M12 6V4m0 2a2 2 0 100 4m0-4a2 2 0 110 4m-6 8a2 2 0 100-4m0 4a2 2 0 100 4m0-4v2m0-6V4m6 6v10m6-2a2 2 0 100-4m0 4a2 2 0 100 4m0-4v2m0-6V4"
             ></path>
           </svg>
-          Actions
+          {t.actions}
           <svg
-            class="w-4 h-4 transition-transform duration-200 {actionsDropdownOpen
+            class="w-4 h-4 transition-transform duration-200 absolute right-4 lg:right-0 lg:relative {actionsDropdownOpen
               ? 'rotate-180'
               : ''}"
             fill="none"
@@ -372,7 +353,7 @@
 
         {#if actionsDropdownOpen}
           <div
-            class="absolute right-0 mt-2 w-48 bg-white rounded-lg shadow-lg border border-gray-200 z-10"
+            class="absolute right-0 mt-2 w-full lg:w-48 bg-white rounded-lg shadow-lg border border-gray-200 z-10"
           >
             <div class="py-1">
               <button
@@ -395,7 +376,7 @@
                     d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"
                   ></path>
                 </svg>
-                {allPRsSelected ? "Deselect All" : "Select All"}
+                {allPRsSelected ? t.deselect_all : t.select_all}
               </button>
               <button
                 on:click={() => {
@@ -417,7 +398,7 @@
                     d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15"
                   ></path>
                 </svg>
-                Refresh
+                {t.refresh}
               </button>
             </div>
           </div>
@@ -428,7 +409,7 @@
     {#if $selectedPRs.length > 0}
       <div class="text-sm text-gray-500 mb-6">
         <span class="text-primary-600 font-semibold">
-          Selected: {$selectedPRs.length}
+          {t.selected}: {$selectedPRs.length}
         </span>
       </div>
     {/if}

@@ -10,6 +10,7 @@ export interface GitHubUser {
   name?: string;
   id: number;
   avatar_url: string;
+  html_url: string;
 }
 
 export interface GitHubLabel {

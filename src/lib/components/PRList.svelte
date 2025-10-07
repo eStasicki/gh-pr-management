@@ -143,7 +143,7 @@
     </div>
   {:else if filteredPRs.length === 0}
     <div class="text-center py-12">
-      <p class="text-gray-500 text-lg">No PRs found</p>
+      <p class="text-gray-500 text-lg">{t.no_prs_found}</p>
     </div>
   {:else}
     {#each filteredPRs as pr (pr.number)}
@@ -180,17 +180,30 @@
           </a>
         </div>
 
-        <div class="flex gap-4 mb-3 text-sm text-gray-500">
+        <div
+          class="flex flex-col lg:items-center lg:flex-row gap-2 mb-3 text-sm text-gray-500"
+        >
           <span>Base: {pr.base.ref}</span>
           <span class="font-semibold text-primary-600">
-            Author: {pr.user.login}
+            {t.author}: {pr.user.login}
           </span>
           <span
-            class="px-2 py-1 rounded text-xs font-medium bg-green-100 text-green-800"
+            class="px-2 py-1 rounded text-xs font-medium bg-green-100 text-green-800 max-lg:order-1 max-w-max border border-green-300"
           >
             {pr.state.toUpperCase()}
           </span>
-          <span>Updated: {new Date(pr.updated_at).toLocaleDateString()}</span>
+          <span
+            >{t.last_updated}: {new Date(pr.updated_at).toLocaleDateString(
+              $language,
+              {
+                year: "numeric",
+                month: "2-digit",
+                day: "2-digit",
+                hour: "2-digit",
+                minute: "2-digit",
+              }
+            )}</span
+          >
         </div>
 
         <div class="flex flex-wrap gap-2">
@@ -207,13 +220,11 @@
     {/each}
 
     {#if $totalPages > 1}
-      <div
-        class="flex justify-center items-center gap-4 mt-8 pt-6 border-t border-gray-200"
-      >
+      <div class="flex justify-center items-center gap-4 mt-2 pt-2">
         <button
           on:click={prevPage}
           disabled={$currentPage === 1}
-          class="px-4 py-2 border border-gray-300 rounded-md text-sm font-medium transition-colors disabled:opacity-50 disabled:cursor-not-allowed hover:bg-gray-50"
+          class="px-4 py-2 border border-gray-300 rounded-md text-sm font-medium transition-colors disabled:opacity-50 disabled:cursor-not-allowed hover:bg-gray-50 cursor-pointer"
         >
           {t.previous || "Previous"}
         </button>
@@ -225,9 +236,9 @@
           }) as page}
             <button
               on:click={() => goToPage(page)}
-              class="px-3 py-2 text-sm font-medium transition-colors {$currentPage ===
+              class="px-3 py-2 text-sm font-medium transition-colors cursor-pointer rounded-md {$currentPage ===
               page
-                ? 'bg-gray-900 text-white'
+                ? 'bg-blue-500 text-white'
                 : 'border border-gray-300 hover:bg-gray-50'}"
             >
               {page}
@@ -238,14 +249,19 @@
         <button
           on:click={nextPage}
           disabled={$currentPage === $totalPages}
-          class="px-4 py-2 border border-gray-300 rounded-md text-sm font-medium transition-colors disabled:opacity-50 disabled:cursor-not-allowed hover:bg-gray-50"
+          class="px-4 py-2 border border-gray-300 rounded-md text-sm font-medium transition-colors disabled:opacity-50 disabled:cursor-not-allowed hover:bg-gray-50 cursor-pointer"
         >
           {t.next || "Next"}
         </button>
       </div>
 
-      <div class="text-center mt-4 text-sm text-gray-600">
-        Page {$currentPage} of {$totalPages} - Showing {filteredPRs.length} PRs
+      <div class="text-center mt-2 text-sm text-gray-600">
+        {t.pagination_page}
+        {$currentPage}
+        {t.pagination_of}
+        {$totalPages} - {t.pagination_showing}
+        {filteredPRs.length}
+        {t.pagination_prs}
       </div>
     {/if}
   {/if}
