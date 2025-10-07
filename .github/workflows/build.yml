@@ -33,6 +33,9 @@ jobs:
       - name: Build SvelteKit app
         run: yarn build
 
+      - name: Create 404.html for SPA support
+        run: node scripts/post-build.js
+
       - name: Setup Pages
         uses: actions/configure-pages@v4
 
