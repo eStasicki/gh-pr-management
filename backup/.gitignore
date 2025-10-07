@@ -1,0 +1,12 @@
+# Configuration files with sensitive data
+.env
+config.json
+.gh-pr-management-config
+
+# Node.js
+node_modules/
+package-lock.json
+
+# IDE
+.vscode/
+.idea/

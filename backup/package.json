@@ -1,0 +1,20 @@
+{
+  "name": "github-pr-management",
+  "version": "1.0.0",
+  "description": "GitHub PR Management Tool",
+  "main": "index.html",
+  "scripts": {
+    "dev": "node env-to-config.js && python3 -m http.server 8000",
+    "build": "node env-to-config.js",
+    "start": "python3 -m http.server 8000",
+    "convert": "node env-to-config.js"
+  },
+  "keywords": [
+    "github",
+    "pr",
+    "management",
+    "frontend"
+  ],
+  "author": "",
+  "license": "MIT"
+}

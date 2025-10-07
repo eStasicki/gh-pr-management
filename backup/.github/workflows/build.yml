@@ -29,20 +29,18 @@ jobs:
         uses: actions/setup-node@v4
         with:
           node-version: "18"
-          cache: "yarn"
 
-      - name: Install dependencies
-        run: yarn install --frozen-lockfile
-
-      - name: Create .env file from secrets
+      - name: Create config.json from secrets
         run: |
-          echo "VITE_GITHUB_TOKEN=${{ secrets.GITHUB_TOKEN || '' }}" >> .env
-          echo "VITE_REPO_OWNER=${{ secrets.REPO_OWNER || '' }}" >> .env
-          echo "VITE_REPO_NAME=${{ secrets.REPO_NAME || '' }}" >> .env
-          echo "VITE_GITHUB_ENTERPRISE_URL=${{ secrets.GITHUB_ENTERPRISE_URL || '' }}" >> .env
+          echo '{
+            "github_token": "${{ secrets.GITHUB_TOKEN || '' }}",
+            "repo_owner": "${{ secrets.REPO_OWNER || '' }}",
+            "repo_name": "${{ secrets.REPO_NAME || '' }}",
+            "github_enterprise_url": "${{ secrets.GITHUB_ENTERPRISE_URL || '' }}"
+          }' > config.json
 
-      - name: Build SvelteKit app
-        run: yarn build
+          echo "Generated config.json:"
+          cat config.json
 
       - name: Setup Pages
         uses: actions/configure-pages@v4
@@ -50,7 +48,7 @@ jobs:
       - name: Upload artifact
         uses: actions/upload-pages-artifact@v3
         with:
-          path: "build"
+          path: "."
 
   deploy:
     environment:

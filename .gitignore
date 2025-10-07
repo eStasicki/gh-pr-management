@@ -1,12 +1,23 @@
-# Configuration files with sensitive data
+node_modules
+
+# Output
+.output
+.vercel
+.netlify
+.wrangler
+/.svelte-kit
+/build
+
+# OS
+.DS_Store
+Thumbs.db
+
+# Env
 .env
-config.json
-.gh-pr-management-config
+.env.*
+!.env.example
+!.env.test
 
-# Node.js
-node_modules/
-package-lock.json
-
-# IDE
-.vscode/
-.idea/
+# Vite
+vite.config.js.timestamp-*
+vite.config.ts.timestamp-*
