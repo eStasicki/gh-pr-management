@@ -224,7 +224,19 @@ translate() {
 }
 
 load_config
+
+# Change to repository directory for GitHub CLI commands
+cd "$REPO_SRC" || {
+  echo "Cannot change to repository directory: $REPO_SRC"
+  echo "Nie można przejść do katalogu repozytorium: $REPO_SRC"
+  exit 1
+}
+
 ALL_LABELS=$(gh label list --limit 999 --json name | jq -r '.[].name')
+
+echo "Working in repository: $(pwd)"
+echo "Pracuję w repozytorium: $(pwd)"
+echo ""
 
 check_label_exists() {
   local label_to_check="$1"

@@ -49,6 +49,12 @@ Plik `.gh-pr-management-config` zawiera:
 
 ## Requirements / Wymagania
 
-- `gh` CLI (GitHub CLI)
+- `gh` CLI (GitHub CLI) - musi być zalogowany (`gh auth login`)
 - `jq` (JSON processor)
 - Dostęp do repozytorium GitHub
+- Repozytorium musi być lokalnie sklonowane
+
+## Important / Ważne
+
+Skrypt automatycznie przechodzi do katalogu repozytorium przed wykonaniem komend GitHub CLI.
+Upewnij się, że ścieżka `REPO_SRC` wskazuje na katalog z repozytorium Git.
