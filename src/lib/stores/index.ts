@@ -9,4 +9,5 @@ export {
   totalPages,
   totalPRs,
   searchTerm,
+  updatePRs,
 } from "./prs";

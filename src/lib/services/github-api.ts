@@ -268,6 +268,43 @@ class GitHubAPI {
 
     return branches;
   }
+
+  async getLabels(): Promise<Array<{ name: string; color: string }>> {
+    const currentConfig = get(config);
+    const labels: Array<{ name: string; color: string }> = [];
+    let page = 1;
+    const perPage = 100;
+
+    while (true) {
+      const response = await fetch(
+        `${this.getApiBaseUrl()}/repos/${currentConfig.owner}/${
+          currentConfig.repo
+        }/labels?page=${page}&per_page=${perPage}`,
+        {
+          headers: this.getHeaders(),
+        }
+      );
+
+      if (!response.ok) {
+        throw new Error(`Failed to fetch labels: ${response.statusText}`);
+      }
+
+      const labelsData = await response.json();
+      if (labelsData.length === 0) break;
+
+      labels.push(
+        ...labelsData.map((label: any) => ({
+          name: label.name,
+          color: label.color,
+        }))
+      );
+
+      if (labelsData.length < perPage) break;
+      page++;
+    }
+
+    return labels;
+  }
 }
 
 export const githubAPI = new GitHubAPI();

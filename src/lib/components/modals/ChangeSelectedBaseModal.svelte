@@ -3,15 +3,18 @@
   import { translations } from "$lib/translations";
   import { browser } from "$app/environment";
   import { githubAPI } from "$lib/services/github-api";
-  import { selectedPRs } from "$lib/stores";
+  import { selectedPRs, updatePRs, prs } from "$lib/stores";
   import Modal from "../Modal.svelte";
   import BranchSelector from "../BranchSelector.svelte"; // Single-select branch picker
+  import LabelSelector from "../LabelSelector.svelte"; // Multi-select label picker
 
   export let isOpen = false;
   export let onClose: () => void;
 
   let t = translations.pl;
   let baseBranch = "";
+  let addLabels = false;
+  let selectedLabels: string[] = [];
   let isProcessing = false;
   let currentProcessingPR = 0;
   let processingResults: Array<{
@@ -40,9 +43,15 @@
     baseBranch = branch;
   }
 
+  function handleLabelsChange(labels: string[]) {
+    selectedLabels = labels;
+  }
+
   function handleModalClose() {
     if (!isProcessing) {
       baseBranch = "";
+      addLabels = false;
+      selectedLabels = [];
       processingResults = [];
       showResults = false;
       onClose();
@@ -53,6 +62,22 @@
     if (!isProcessing) {
       selectedPRs.set($selectedPRs.filter((num) => num !== prNumber));
     }
+  }
+
+  function getCurrentLabels(prNumber: number) {
+    const currentPRs = $prs;
+    const pr = currentPRs.find((p) => p.number === prNumber);
+    return pr ? pr.labels : [];
+  }
+
+  function convertStringLabelsToGitHubLabels(labelNames: string[]) {
+    // This is a simplified conversion - in a real app you'd want to fetch full label data
+    return labelNames.map((name) => ({
+      id: Math.random(), // Temporary ID
+      name: name,
+      color: "e0e0e0", // Default color
+      description: "",
+    }));
   }
 
   async function processPRs() {
@@ -66,6 +91,12 @@
 
       try {
         await githubAPI.updatePRBase(prNumber, baseBranch.trim());
+
+        // Add labels if enabled and selected
+        if (addLabels && selectedLabels.length > 0) {
+          await githubAPI.addLabelsToPR(prNumber, selectedLabels);
+        }
+
         processingResults.push({ prNumber, success: true });
       } catch (error) {
         processingResults.push({
@@ -78,6 +109,30 @@
 
     isProcessing = false;
     showResults = true;
+
+    // Update only the affected PRs in the store (smooth update without loader)
+    const successfulPRs = processingResults
+      .filter((result) => result.success)
+      .map((result) => result.prNumber);
+
+    if (successfulPRs.length > 0) {
+      // Update each PR individually to preserve their existing labels
+      successfulPRs.forEach((prNumber) => {
+        const currentLabels = getCurrentLabels(prNumber);
+        const newLabels =
+          addLabels && selectedLabels.length > 0
+            ? [
+                ...currentLabels,
+                ...convertStringLabelsToGitHubLabels(selectedLabels),
+              ]
+            : currentLabels;
+
+        updatePRs([prNumber], {
+          base: { ref: baseBranch.trim() },
+          labels: newLabels,
+        });
+      });
+    }
   }
 </script>
 
@@ -129,6 +184,28 @@
         onBranchSelect={handleBranchSelect}
       />
     </div>
+
+    <div class="mb-4">
+      <label class="flex items-center gap-2 cursor-pointer">
+        <input
+          type="checkbox"
+          bind:checked={addLabels}
+          class="w-4 h-4 text-blue-600 bg-gray-100 border-gray-300 rounded focus:ring-blue-500 focus:ring-2"
+        />
+        <span class="text-sm font-medium text-gray-700">
+          {t.add_labels_to_prs}
+        </span>
+      </label>
+    </div>
+
+    {#if addLabels}
+      <div class="mb-4">
+        <LabelSelector
+          bind:selectedLabels
+          onLabelsChange={handleLabelsChange}
+        />
+      </div>
+    {/if}
 
     <div class="flex gap-3 justify-end">
       <button

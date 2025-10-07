@@ -1,6 +1,7 @@
 import { writable } from "svelte/store";
 import { browser } from "$app/environment";
 import type { GitHubPR, GitHubUser } from "$lib/types";
+import { get } from "svelte/store";
 
 export const prs = writable<GitHubPR[]>([]);
 export const currentUser = writable<GitHubUser | null>(null);
@@ -34,5 +35,17 @@ if (browser) {
     } catch (error) {
       console.error("Error saving selected PRs to localStorage:", error);
     }
+  });
+}
+
+// Function to update specific PRs in the store
+export function updatePRs(prNumbers: number[], updates: Partial<GitHubPR>) {
+  prs.update((currentPRs) => {
+    return currentPRs.map((pr) => {
+      if (prNumbers.includes(pr.number)) {
+        return { ...pr, ...updates };
+      }
+      return pr;
+    });
   });
 }

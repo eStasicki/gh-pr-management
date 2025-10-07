@@ -73,6 +73,11 @@ export const translations: Translations = {
     no_branches_found: "Nie znaleziono branchy",
     no_branches_available: "Brak dostępnych branchy",
     try_again: "Spróbuj ponownie",
+    add_labels_to_prs: "Dodaj również Label dla wybranych PR",
+    select_labels: "Wybierz labele",
+    loading_labels: "Ładowanie labeli...",
+    no_labels_found: "Nie znaleziono labeli",
+    no_labels_available: "Brak dostępnych labeli",
   },
   en: {
     config_title: "Configuration",
@@ -146,5 +151,10 @@ export const translations: Translations = {
     no_branches_found: "No branches found",
     no_branches_available: "No branches available",
     try_again: "Try again",
+    add_labels_to_prs: "Also add Labels to selected PRs",
+    select_labels: "Select labels",
+    loading_labels: "Loading labels...",
+    no_labels_found: "No labels found",
+    no_labels_available: "No labels available",
   },
 };
