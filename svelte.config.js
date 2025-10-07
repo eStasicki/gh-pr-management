@@ -16,7 +16,7 @@ const config = {
 			strict: false
 		}),
 		paths: {
-			base: process.env.NODE_ENV === 'production' ? '/gh-pr-management' : '',
+			base: '/gh-pr-management',
 		},
 		prerender: {
 			handleHttpError: 'warn'
