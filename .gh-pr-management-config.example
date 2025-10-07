@@ -1,0 +1,13 @@
+# GitHub PR Management Configuration
+# Konfiguracja zarządzania PR GitHub
+
+# Language setting (pl/en)
+# Ustawienie języka (pl/en)
+LANGUAGE=pl
+
+# Repository source path (required)
+# Ścieżka repozytorium (wymagana)
+REPO_SRC=/path/to/your/repository
+
+# Example:
+# REPO_SRC=/home/user/my-github-project
