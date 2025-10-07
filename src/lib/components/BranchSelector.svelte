@@ -213,9 +213,9 @@
             type="button"
             data-index={index}
             on:click={() => selectBranch(branch)}
-            class="w-full text-left px-4 py-2 hover:bg-gray-100 focus:bg-gray-100 focus:outline-none {branch ===
+            class="w-full text-left px-4 py-2 hover:bg-gray-100 focus:bg-gray-100 focus:outline-none border-b border-gray-200 last:border-b-0 {branch ===
             selectedBranch
-              ? 'bg-blue-50 text-blue-700'
+              ? 'bg-green-100 text-green-600'
               : selectedIndex === index
                 ? 'bg-gray-100 text-gray-900'
                 : 'text-gray-700'}"
