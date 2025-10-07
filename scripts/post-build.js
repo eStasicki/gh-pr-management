@@ -43,22 +43,24 @@ try {
 
 				// SvelteKit app initialization`;
 
+  // Extract SvelteKit config from index.html
+  const sveltekitMatch = indexContent.match(/__sveltekit_(\w+)\s*=\s*{[\s\S]*?};/);
+  const sveltekitConfig = sveltekitMatch ? sveltekitMatch[0] : '';
+  
+  // Extract import statements
+  const importMatch = indexContent.match(/Promise\.all\(\[[\s\S]*?\]\)/);
+  const importStatements = importMatch ? importMatch[0] : '';
+  
   // Replace the SvelteKit initialization script with SPA redirect + SvelteKit
   const updatedContent = indexContent.replace(
-    /<script>\s*{[\s\S]*?}<\/script>/,
+    /<script>[\s\S]*?<\/script>/,
     `<script>${spaRedirectScript}
 				{
-					__sveltekit_1bebq6o = {
-						base: "/gh-pr-management",
-						assets: "/gh-pr-management"
-					};
+					${sveltekitConfig}
 
 					const element = document.currentScript.parentElement;
 
-					Promise.all([
-						import("/gh-pr-management/_app/immutable/entry/start.Di1VdZya.js"),
-						import("/gh-pr-management/_app/immutable/entry/app.DTme3Luv.js")
-					]).then(([kit, app]) => {
+					${importStatements}.then(([kit, app]) => {
 						kit.start(app, element);
 					});
 				}
