@@ -1,75 +1,91 @@
 # GitHub PR Management
 
-Aplikacja webowa do zarządzania Pull Requestami na GitHub z obsługą konfiguracji środowiskowej.
+Aplikacja webowa do zarządzania Pull Requestami na GitHub zbudowana w SvelteKit z TypeScript i Tailwind CSS.
 
 ## Funkcje
 
-- Zarządzanie wieloma Pull Requestami jednocześnie
-- Zmiana base branch dla wybranych PR
-- Dodawanie, usuwanie i zamiana labeli
-- Tryb bezpieczny - pokazuje tylko Twoje PR
-- Obsługa wielu języków (Polski/Angielski)
-- Konfiguracja oparta na zmiennych środowiskowych
+- 🚀 **SvelteKit** - Nowoczesny framework z SSR
+- 💎 **TypeScript** - Type safety i lepsze DX
+- 🎨 **Tailwind CSS** - Responsywny design
+- 🔐 **Bezpieczeństwo** - Tylko Twoje PR są widoczne
+- 🌍 **Wielojęzyczność** - Polski/Angielski
+- ⚡ **Hot reload** - Szybki development
+- 🔧 **Zmienne środowiskowe** - Łatwa konfiguracja
 
 ## Szybki start
 
-### Rozwój lokalny
+### 1. Instalacja
 
-1. Sklonuj repozytorium:
+```bash
+yarn install
+```
 
-   ```bash
-   git clone <repository-url>
-   cd gh-pr-management
-   ```
+### 2. Konfiguracja
 
-2. Skonfiguruj aplikację:
+```bash
+cp .env.example .env
+# Edytuj .env z danymi GitHub
+```
 
-   ```bash
-   cp .env.example .env
-   # Edytuj .env z danymi GitHub
-   ```
+### 3. Development
 
-3. Uruchom serwer deweloperski:
+```bash
+yarn dev
+```
 
-   ```bash
-   npm run dev
-   ```
+Otwórz http://localhost:5173 w przeglądarce!
 
-4. Otwórz http://localhost:8000 w przeglądarce
+## Dostępne komendy
 
-### Wdrożenie produkcyjne
-
-1. Skonfiguruj GitHub Secrets w repozytorium:
-
-   - Przejdź do Settings → Secrets and variables → Actions
-   - Dodaj: `GITHUB_TOKEN`, `REPO_OWNER`, `REPO_NAME`, `GITHUB_ENTERPRISE_URL` (opcjonalne)
-
-2. Wypchnij na branch main - GitHub Actions automatycznie wdroży
+- `yarn dev` - Serwer deweloperski z hot reload
+- `yarn build` - Build produkcyjny
+- `yarn preview` - Podgląd builda
+- `yarn check` - Sprawdzenie typów TypeScript
 
 ## Konfiguracja
 
-### Szybki start
+### Zmienne środowiskowe (.env)
 
-1. **Lokalny rozwój:**
+```env
+VITE_GITHUB_TOKEN=ghp_xxxxxxxxxxxxxxxxxxxx
+VITE_REPO_OWNER=username
+VITE_REPO_NAME=repository-name
+VITE_GITHUB_ENTERPRISE_URL=
+```
 
-   ```bash
-   cp .env.example .env
-   # Edytuj .env z danymi GitHub
-   npm run dev
-   ```
+### GitHub Secrets (produkcja)
 
-2. **Produkcja:**
-   - Dodaj sekrety w GitHub: `GITHUB_TOKEN`, `REPO_OWNER`, `REPO_NAME`, `GITHUB_ENTERPRISE_URL`
-   - Wypchnij na main - automatyczne wdrożenie
+- `GITHUB_TOKEN` - Token GitHub
+- `REPO_OWNER` - Właściciel repozytorium
+- `REPO_NAME` - Nazwa repozytorium
+- `GITHUB_ENTERPRISE_URL` - URL GitHub Enterprise (opcjonalne)
 
-Zobacz [CONFIG.md](CONFIG.md) dla szczegółowych instrukcji konfiguracji.
+## Wdrożenie
+
+Aplikacja automatycznie wdraża się na GitHub Pages po push na branch `main`.
+
+## Struktura projektu
+
+```
+src/
+├── lib/
+│   ├── components/     # Komponenty Svelte
+│   ├── stores/         # Svelte stores
+│   ├── types/          # Definicje TypeScript
+│   └── translations.ts # Tłumaczenia
+├── routes/
+│   ├── +layout.svelte  # Główny layout
+│   └── +page.svelte    # Strona główna
+└── app.html           # HTML template
+```
 
 ## Bezpieczeństwo
 
 - Tokeny są szyfrowane w localStorage
-- Widoczne i zarządzalne są tylko Twoje PR
-- Pliki z danymi wrażliwymi są wykluczone z kontroli wersji
+- Widoczne są tylko Twoje PR
+- Zmienne środowiskowe są bezpieczne
+- Pliki .env nie są commitowane
 
 ## Stary skrypt bash
 
-Poprzednia wersja skryptu bash jest dostępna w pliku `manage_pr.sh` dla użytkowników preferujących interfejs terminala.
+Poprzednia wersja skryptu bash jest dostępna w folderze `backup/` dla użytkowników preferujących interfejs terminala.

@@ -1,0 +1,10 @@
+@import "tailwindcss";
+
+body {
+  min-height: 100vh;
+  background: linear-gradient(to bottom right, #3b82f6, #9333ea, #7c3aed);
+}
+
+button {
+  @apply not-disabled:cursor-pointer;
+}
