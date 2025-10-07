@@ -159,7 +159,7 @@
             togglePRSelection(pr.number);
           }
         }}
-        class="rounded-xl p-5 transition-all duration-300 cursor-pointer hover:border-primary-500 hover:-translate-y-0.5 hover:shadow-lg border-2 select-none focus:outline-none focus:ring-2 focus:ring-primary-500 focus:ring-offset-2 {$selectedPRs.includes(
+        class="rounded-xl p-5 transition-all duration-300 cursor-pointer hover:border-primary-500 hover:-translate-y-0.5 hover:shadow-lg border-2 select-none focus:outline-none {$selectedPRs.includes(
           pr.number
         )
           ? 'bg-gray-200 border-primary-500'
@@ -167,24 +167,17 @@
       >
         <div class="flex justify-between items-start mb-3">
           <div class="flex items-start gap-3 flex-1">
-            <input
-              type="checkbox"
-              checked={$selectedPRs.includes(pr.number)}
-              on:change={() => togglePRSelection(pr.number)}
-              on:click|stopPropagation
-              class="mt-1 w-4 h-4 text-primary-600 bg-gray-100 border-gray-300 rounded focus:ring-primary-500 focus:ring-2"
-            />
             <div class="font-semibold text-gray-800 text-lg pr-4 flex-1">
               {pr.title}
             </div>
           </div>
-          <div
-            class="bg-primary-500 text-black px-2 py-1 rounded-md text-xs font-semibold flex-shrink-0"
+          <a
+            href={pr.html_url}
+            target="_blank"
+            class="bg-primary-500 text-white px-2 py-1 rounded-md text-xs font-semibold flex-shrink-0 bg-blue-500 hover:bg-blue-600 transition-all duration-300"
           >
-            <a href={pr.html_url} target="_blank" class="hover:underline"
-              >#{pr.number}</a
-            >
-          </div>
+            #{pr.number}
+          </a>
         </div>
 
         <div class="flex gap-4 mb-3 text-sm text-gray-500">
