@@ -26,6 +26,31 @@ class GitHubPRManager {
     }
   }
 
+  // Load default config from config.json
+  // This file is generated from .env (development) or GitHub Secrets (production)
+  async loadDefaultConfig() {
+    try {
+      const response = await fetch("./config.json");
+      if (response.ok) {
+        const config = await response.json();
+        return {
+          token: config.github_token || "",
+          owner: config.repo_owner || "",
+          repo: config.repo_name || "",
+          enterpriseUrl: config.github_enterprise_url || "",
+        };
+      }
+    } catch (error) {
+      console.log("No config.json found or error loading it:", error);
+    }
+    return {
+      token: "",
+      owner: "",
+      repo: "",
+      enterpriseUrl: "",
+    };
+  }
+
   // SECURITY: Load config with decryption
   loadSecureConfig() {
     // Clean up old unencrypted data
@@ -136,10 +161,31 @@ class GitHubPRManager {
     return allPRs;
   }
 
-  init() {
+  async init() {
     this.setupEventListeners();
     this.loadTranslations();
     this.applyLanguage();
+
+    // Try to load default config from config.json
+    const defaultConfig = await this.loadDefaultConfig();
+
+    // Merge default config with stored config (stored config takes priority)
+    this.config = {
+      token: this.config.token || defaultConfig.token,
+      owner: this.config.owner || defaultConfig.owner,
+      repo: this.config.repo || defaultConfig.repo,
+      enterpriseUrl: this.config.enterpriseUrl || defaultConfig.enterpriseUrl,
+    };
+
+    // Pre-fill form with default values if available
+    if (
+      defaultConfig.token ||
+      defaultConfig.owner ||
+      defaultConfig.repo ||
+      defaultConfig.enterpriseUrl
+    ) {
+      this.prefillConfigForm(defaultConfig);
+    }
 
     if (this.config.token && this.config.owner && this.config.repo) {
       this.showMainSection();
@@ -332,6 +378,22 @@ class GitHubPRManager {
     document.getElementById(`lang-${this.language}`).classList.add("active");
   }
 
+  prefillConfigForm(defaultConfig) {
+    if (defaultConfig.token) {
+      document.getElementById("github-token").value = defaultConfig.token;
+    }
+    if (defaultConfig.owner) {
+      document.getElementById("repo-owner").value = defaultConfig.owner;
+    }
+    if (defaultConfig.repo) {
+      document.getElementById("repo-name").value = defaultConfig.repo;
+    }
+    if (defaultConfig.enterpriseUrl) {
+      document.getElementById("github-enterprise-url").value =
+        defaultConfig.enterpriseUrl;
+    }
+  }
+
   showConfigSection() {
     document.getElementById("config-section").classList.remove("hidden");
     document.getElementById("main-section").classList.add("hidden");
@@ -388,7 +450,10 @@ class GitHubPRManager {
       console.log("Current user:", this.currentUser);
 
       // Update UI with current user
-      document.getElementById("user-login").textContent = this.currentUser;
+      const userDisplayName = currentUser.name
+        ? `${this.currentUser} (${currentUser.name})`
+        : this.currentUser;
+      document.getElementById("user-login").textContent = userDisplayName;
 
       // Load ALL PRs with pagination
       this.prs = await this.loadAllPRs();
@@ -820,12 +885,12 @@ class GitHubPRManager {
 }
 
 // Initialize the application
-document.addEventListener("DOMContentLoaded", () => {
-  new GitHubPRManager();
+document.addEventListener("DOMContentLoaded", async () => {
+  const manager = new GitHubPRManager();
+  window.githubPRManager = manager;
 
   // Add search functionality
   document.getElementById("pr-search").addEventListener("input", () => {
-    const manager = window.githubPRManager || new GitHubPRManager();
     manager.renderPRs();
   });
 });

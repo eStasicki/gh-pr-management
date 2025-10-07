@@ -1,60 +1,75 @@
-# GitHub PR Management Script
+# GitHub PR Management
 
-Skrypt do zarządzania Pull Requestami na GitHub.
+Aplikacja webowa do zarządzania Pull Requestami na GitHub z obsługą konfiguracji środowiskowej.
 
-## Setup / Konfiguracja
+## Funkcje
 
-### 1. Skopiuj plik konfiguracyjny
+- Zarządzanie wieloma Pull Requestami jednocześnie
+- Zmiana base branch dla wybranych PR
+- Dodawanie, usuwanie i zamiana labeli
+- Tryb bezpieczny - pokazuje tylko Twoje PR
+- Obsługa wielu języków (Polski/Angielski)
+- Konfiguracja oparta na zmiennych środowiskowych
 
-```bash
-cp .gh-pr-management-config.example .gh-pr-management-config
-```
+## Szybki start
 
-### 2. Edytuj plik konfiguracyjny
+### Rozwój lokalny
 
-```bash
-nano .gh-pr-management-config
-```
+1. Sklonuj repozytorium:
 
-### 3. Ustaw ścieżkę repozytorium
+   ```bash
+   git clone <repository-url>
+   cd gh-pr-management
+   ```
 
-```bash
-REPO_SRC=/path/to/your/github/repository
-```
+2. Skonfiguruj aplikację:
 
-### 4. Uruchom skrypt
+   ```bash
+   cp .env.example .env
+   # Edytuj .env z danymi GitHub
+   ```
 
-```bash
-./manage_pr.sh
-```
+3. Uruchom serwer deweloperski:
 
-## Configuration / Konfiguracja
+   ```bash
+   npm run dev
+   ```
 
-Plik `.gh-pr-management-config` zawiera:
+4. Otwórz http://localhost:8000 w przeglądarce
 
-- `LANGUAGE=pl` - język interfejsu (pl/en)
-- `REPO_SRC=/path/to/repo` - ścieżka do repozytorium GitHub
+### Wdrożenie produkcyjne
 
-## Features / Funkcje
+1. Skonfiguruj GitHub Secrets w repozytorium:
 
-1. Zmień base-branch wszystkim PR
-2. Zmień base-branch i usuń/ustaw labeli
-3. Zmień base-branch dla wskazanego PR
-4. Podmień base-branch PR zaczynających się od UNIC/fixversion-\*
-5. Zmień base-branch dla wskazanego PR z opcją podmiany label
-6. Usuń wybraną label z wybranego PR i ewentualnie dodaj nową
-7. Zmień język
-8. Zmień ścieżkę repozytorium
-9. Zakończ
+   - Przejdź do Settings → Secrets and variables → Actions
+   - Dodaj: `GITHUB_TOKEN`, `REPO_OWNER`, `REPO_NAME`, `GITHUB_ENTERPRISE_URL` (opcjonalne)
 
-## Requirements / Wymagania
+2. Wypchnij na branch main - GitHub Actions automatycznie wdroży
 
-- `gh` CLI (GitHub CLI) - musi być zalogowany (`gh auth login`)
-- `jq` (JSON processor)
-- Dostęp do repozytorium GitHub
-- Repozytorium musi być lokalnie sklonowane
+## Konfiguracja
 
-## Important / Ważne
+### Szybki start
 
-Skrypt automatycznie przechodzi do katalogu repozytorium przed wykonaniem komend GitHub CLI.
-Upewnij się, że ścieżka `REPO_SRC` wskazuje na katalog z repozytorium Git.
+1. **Lokalny rozwój:**
+
+   ```bash
+   cp .env.example .env
+   # Edytuj .env z danymi GitHub
+   npm run dev
+   ```
+
+2. **Produkcja:**
+   - Dodaj sekrety w GitHub: `GITHUB_TOKEN`, `REPO_OWNER`, `REPO_NAME`, `GITHUB_ENTERPRISE_URL`
+   - Wypchnij na main - automatyczne wdrożenie
+
+Zobacz [CONFIG.md](CONFIG.md) dla szczegółowych instrukcji konfiguracji.
+
+## Bezpieczeństwo
+
+- Tokeny są szyfrowane w localStorage
+- Widoczne i zarządzalne są tylko Twoje PR
+- Pliki z danymi wrażliwymi są wykluczone z kontroli wersji
+
+## Stary skrypt bash
+
+Poprzednia wersja skryptu bash jest dostępna w pliku `manage_pr.sh` dla użytkowników preferujących interfejs terminala.
