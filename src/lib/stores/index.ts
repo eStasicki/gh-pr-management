@@ -1,3 +1,12 @@
 export { config } from "./config";
 export { language } from "./language";
-export { prs, currentUser, selectedPRs, isLoading } from "./prs";
+export {
+  prs,
+  currentUser,
+  selectedPRs,
+  isLoading,
+  currentPage,
+  totalPages,
+  totalPRs,
+  searchTerm,
+} from "./prs";

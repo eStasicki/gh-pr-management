@@ -48,6 +48,8 @@ export const translations: Translations = {
     add_labels: "Dodaj etykiety",
     remove_labels: "Usuń etykiety",
     cancel: "Anuluj",
+    previous: "Poprzednia",
+    next: "Następna",
   },
   en: {
     config_title: "Configuration",
@@ -96,5 +98,7 @@ export const translations: Translations = {
     add_labels: "Add labels",
     remove_labels: "Remove labels",
     cancel: "Cancel",
+    previous: "Previous",
+    next: "Next",
   },
 };

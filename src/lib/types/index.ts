@@ -26,6 +26,7 @@ export interface GitHubPR {
   merged_at: string | null;
   created_at: string;
   updated_at: string;
+  html_url: string;
   user: GitHubUser;
   base: {
     ref: string;

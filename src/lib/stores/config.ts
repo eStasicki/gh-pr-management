@@ -68,4 +68,16 @@ if (browser) {
   config.subscribe((value) => {
     localStorage.setItem("gh_config", JSON.stringify(value));
   });
+
+  // Clear selected PRs when repository changes
+  let previousRepo = "";
+  config.subscribe((value) => {
+    const currentRepo = `${value.owner}/${value.repo}`;
+    if (previousRepo && previousRepo !== currentRepo && currentRepo !== "/") {
+      // Repository changed, clear selected PRs
+      localStorage.removeItem("selectedPRs");
+      console.log("Repository changed, cleared selected PRs");
+    }
+    previousRepo = currentRepo;
+  });
 }
