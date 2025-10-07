@@ -9,10 +9,9 @@ const defaultConfig: GitHubConfig = {
   enterpriseUrl: "",
 };
 
-// Load config from environment variables or localStorage
+// Load config from localStorage only
 function loadConfig(): GitHubConfig {
   if (browser) {
-    // Try to load from localStorage first
     const stored = localStorage.getItem("gh_config");
     if (stored) {
       try {
@@ -21,50 +20,31 @@ function loadConfig(): GitHubConfig {
         console.error("Failed to parse stored config:", e);
       }
     }
-
-    // Fallback to environment variables (only in browser)
-    return {
-      token: import.meta.env.VITE_GITHUB_TOKEN || "",
-      owner: import.meta.env.VITE_REPO_OWNER || "",
-      repo: import.meta.env.VITE_REPO_NAME || "",
-      enterpriseUrl: import.meta.env.VITE_GITHUB_ENTERPRISE_URL || "",
-    };
   }
 
-  // Server-side: return empty config
   return defaultConfig;
 }
 
 export const config = writable<GitHubConfig>(defaultConfig);
 
 if (browser) {
-  // Load config from environment variables or localStorage on client side
-  const envConfig = {
-    token: import.meta.env.VITE_GITHUB_TOKEN || "",
-    owner: import.meta.env.VITE_REPO_OWNER || "",
-    repo: import.meta.env.VITE_REPO_NAME || "",
-    enterpriseUrl: import.meta.env.VITE_GITHUB_ENTERPRISE_URL || "",
-  };
-
-  console.log("All env vars:", import.meta.env);
-  console.log("Environment config:", envConfig);
-
-  // Try to load from localStorage first
+  // Load config from localStorage on client side
   const stored = localStorage.getItem("gh_config");
   if (stored) {
     try {
       const storedConfig = JSON.parse(stored);
-      console.log("Loaded from localStorage:", storedConfig);
+      console.log("Loaded config from localStorage:", storedConfig);
       config.set(storedConfig);
     } catch (e) {
       console.error("Failed to parse stored config:", e);
-      config.set(envConfig);
+      config.set(defaultConfig);
     }
   } else {
-    console.log("No stored config, using environment:", envConfig);
-    config.set(envConfig);
+    console.log("No stored config found, using defaults");
+    config.set(defaultConfig);
   }
 
+  // Save config to localStorage when it changes
   config.subscribe((value) => {
     localStorage.setItem("gh_config", JSON.stringify(value));
   });
