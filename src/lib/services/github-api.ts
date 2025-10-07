@@ -236,6 +236,38 @@ class GitHubAPI {
 
     return results;
   }
+
+  async getBranches(): Promise<string[]> {
+    const currentConfig = get(config);
+    const branches: string[] = [];
+    let page = 1;
+    const perPage = 100;
+
+    while (true) {
+      const response = await fetch(
+        `${this.getApiBaseUrl()}/repos/${currentConfig.owner}/${
+          currentConfig.repo
+        }/branches?page=${page}&per_page=${perPage}`,
+        {
+          headers: this.getHeaders(),
+        }
+      );
+
+      if (!response.ok) {
+        throw new Error(`Failed to fetch branches: ${response.statusText}`);
+      }
+
+      const branchData = await response.json();
+      if (branchData.length === 0) break;
+
+      branches.push(...branchData.map((branch: any) => branch.name));
+
+      if (branchData.length < perPage) break;
+      page++;
+    }
+
+    return branches;
+  }
 }
 
 export const githubAPI = new GitHubAPI();
