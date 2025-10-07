@@ -15,7 +15,9 @@ const config = {
       precompress: false,
       strict: false,
     }),
-    paths: { base: dev ? "" : "/gh-pr-management" },
+    paths: {
+      base: process.env.NODE_ENV === "development" ? "" : "/gh-pr-management",
+    },
     prerender: {
       handleHttpError: "warn",
     },
