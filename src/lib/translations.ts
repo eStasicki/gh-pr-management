@@ -52,6 +52,8 @@ export const translations: Translations = {
     connection_lost_message:
       "Połączenie utracone. Najprawdopodobniej nie posiadasz włączonego VPN. Włącz VPN aby nawiązać połączenie z aplikacją ponownie.",
     retry_connection: "Spróbuj ponownie",
+    token_security_warning:
+      "⚠️ Tokeny są szyfrowane i przechowywane lokalnie. Tylko Ty masz do nich dostęp.",
     previous: "Poprzednia",
     next: "Następna",
     author: "Autor",
@@ -134,6 +136,8 @@ export const translations: Translations = {
     connection_lost_message:
       "Connection lost. You probably don't have VPN enabled. Enable VPN to reconnect to the application.",
     retry_connection: "Retry Connection",
+    token_security_warning:
+      "⚠️ Tokens are encrypted and stored locally. Only you have access to them.",
     previous: "Previous",
     next: "Next",
     author: "Author",
