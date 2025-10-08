@@ -1,5 +1,7 @@
 <script lang="ts">
   import { createEventDispatcher } from "svelte";
+  import { createBackdropClickHandler } from "$lib/utils/uiUtils";
+  import { createEscapeKeyHandler } from "$lib/utils/keyboardUtils";
 
   export let isOpen = false;
   export let title = "";
@@ -7,17 +9,13 @@
 
   const dispatch = createEventDispatcher();
 
-  function handleKeydown(event: KeyboardEvent) {
-    if (event.key === "Escape") {
-      closeModal();
-    }
-  }
+  const escapeKeyHandler = createEscapeKeyHandler(() => {
+    dispatch("close");
+  });
 
-  function handleBackdropClick(event: MouseEvent) {
-    if (event.target === event.currentTarget) {
-      closeModal();
-    }
-  }
+  const backdropHandler = createBackdropClickHandler(() => {
+    dispatch("close");
+  });
 
   function closeModal() {
     dispatch("close");
@@ -27,8 +25,8 @@
 {#if isOpen}
   <div
     class="fixed inset-0 bg-[#00000090] flex items-center justify-center z-50"
-    on:keydown={handleKeydown}
-    on:click={handleBackdropClick}
+    on:keydown={escapeKeyHandler.handleKeydown}
+    on:click={backdropHandler.handleBackdropClick}
     role="dialog"
     aria-modal="true"
     tabindex="-1"

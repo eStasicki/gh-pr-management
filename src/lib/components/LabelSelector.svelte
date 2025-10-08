@@ -4,6 +4,15 @@
   import { language } from "$lib/stores/language";
   import { translations } from "$lib/translations";
   import { browser } from "$app/environment";
+  import {
+    createDropdownHandlers,
+    createClickOutsideHandler,
+  } from "$lib/utils/uiUtils";
+  import {
+    createEscapeKeyHandler,
+    createArrowKeyHandler,
+  } from "$lib/utils/keyboardUtils";
+  import { createArrayToggleHandler } from "$lib/utils/arrayUtils";
 
   // Multi-select label picker
   export let selectedLabels: string[] = [];
@@ -23,6 +32,15 @@
   $: if (browser) {
     t = translations[$language];
   }
+
+  const dropdownHandlers = createDropdownHandlers();
+  const arrayHandlers = createArrayToggleHandler(
+    selectedLabels,
+    onLabelsChange
+  );
+  let clickOutsideHandler: ReturnType<typeof createClickOutsideHandler>;
+  let escapeKeyHandler: ReturnType<typeof createEscapeKeyHandler>;
+  let arrowKeyHandler: ReturnType<typeof createArrowKeyHandler>;
 
   $: {
     if (searchTerm.trim()) {
@@ -71,21 +89,15 @@
   }
 
   function toggleLabel(labelName: string) {
-    if (selectedLabels.includes(labelName)) {
-      selectedLabels = selectedLabels.filter((name) => name !== labelName);
-    } else {
-      selectedLabels = [...selectedLabels, labelName];
-    }
-    onLabelsChange(selectedLabels);
+    arrayHandlers.toggleItem(labelName);
   }
 
   function removeLabel(labelName: string) {
-    selectedLabels = selectedLabels.filter((name) => name !== labelName);
-    onLabelsChange(selectedLabels);
+    arrayHandlers.removeItem(labelName);
   }
 
   function toggleDropdown() {
-    isOpen = !isOpen;
+    isOpen = dropdownHandlers.toggleDropdown(isOpen);
     if (isOpen) {
       searchTerm = "";
       selectedIndex = -1;
@@ -93,7 +105,7 @@
   }
 
   function openDropdown() {
-    isOpen = true;
+    isOpen = dropdownHandlers.openDropdown();
     searchTerm = "";
     selectedIndex = -1;
   }
@@ -101,29 +113,8 @@
   function handleKeydown(event: KeyboardEvent) {
     if (!isOpen) return;
 
-    switch (event.key) {
-      case "Escape":
-        isOpen = false;
-        searchTerm = "";
-        selectedIndex = -1;
-        break;
-      case "ArrowDown":
-        event.preventDefault();
-        selectedIndex = Math.min(selectedIndex + 1, filteredLabels.length - 1);
-        scrollToSelectedItem();
-        break;
-      case "ArrowUp":
-        event.preventDefault();
-        selectedIndex = Math.max(selectedIndex - 1, 0);
-        scrollToSelectedItem();
-        break;
-      case "Enter":
-        event.preventDefault();
-        if (selectedIndex >= 0 && selectedIndex < filteredLabels.length) {
-          toggleLabel(filteredLabels[selectedIndex].name);
-        }
-        break;
-    }
+    escapeKeyHandler.handleKeydown(event);
+    arrowKeyHandler.handleKeydown(event);
   }
 
   function scrollToSelectedItem() {
@@ -157,9 +148,36 @@
   }
 
   onMount(() => {
-    document.addEventListener("click", handleClickOutside);
+    clickOutsideHandler = createClickOutsideHandler(
+      dropdownElement,
+      isOpen,
+      () => {
+        isOpen = dropdownHandlers.closeDropdown();
+      }
+    );
+
+    escapeKeyHandler = createEscapeKeyHandler(() => {
+      isOpen = dropdownHandlers.closeDropdown();
+      searchTerm = "";
+      selectedIndex = -1;
+    });
+
+    arrowKeyHandler = createArrowKeyHandler(
+      filteredLabels,
+      selectedIndex,
+      (index) => {
+        selectedIndex = index;
+        scrollToSelectedItem();
+      },
+      (label) => {
+        toggleLabel(label.name);
+      }
+    );
+
+    clickOutsideHandler.addEventListener();
+
     return () => {
-      document.removeEventListener("click", handleClickOutside);
+      clickOutsideHandler.removeEventListener();
     };
   });
 </script>

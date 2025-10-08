@@ -12,6 +12,10 @@
   import { onMount } from "svelte";
   import { get } from "svelte/store";
   import ConnectionLostModal from "./modals/ConnectionLostModal.svelte";
+  import {
+    createDropdownHandlers,
+    createClickOutsideHandlerWithSelector,
+  } from "$lib/utils/uiUtils";
 
   let t = translations.pl;
   let token = "";
@@ -25,6 +29,11 @@
     t = translations[$language];
   }
 
+  const dropdownHandlers = createDropdownHandlers();
+  let clickOutsideHandler: ReturnType<
+    typeof createClickOutsideHandlerWithSelector
+  >;
+
   onMount(() => {
     if (browser) {
       const currentConfig = get(config);
@@ -33,24 +42,29 @@
       repo = currentConfig.repo || "";
       enterpriseUrl = currentConfig.enterpriseUrl || "";
     }
+
+    clickOutsideHandler = createClickOutsideHandlerWithSelector(
+      ".token-dropdown-container",
+      () => {
+        showTokenDropdown = dropdownHandlers.closeDropdown();
+      }
+    );
+    clickOutsideHandler.addEventListener();
+
+    return () => {
+      clickOutsideHandler.removeEventListener();
+    };
   });
 
   function selectToken(tokenItem: any) {
     token = tokenItem.token;
     selectedTokenId = tokenItem.id;
-    showTokenDropdown = false;
+    showTokenDropdown = dropdownHandlers.closeDropdown();
   }
 
   function handleTokenInput() {
-    showTokenDropdown = false;
+    showTokenDropdown = dropdownHandlers.closeDropdown();
     selectedTokenId = "";
-  }
-
-  function handleClickOutside(event: MouseEvent) {
-    const target = event.target as HTMLElement;
-    if (!target.closest(".token-dropdown-container")) {
-      showTokenDropdown = false;
-    }
   }
 
   async function saveConfig() {
@@ -76,8 +90,6 @@
     }
   }
 </script>
-
-<svelte:window on:click={handleClickOutside} />
 
 <div class="bg-white rounded-2xl p-8 mb-6 shadow-2xl">
   <h2 class="text-2xl font-bold text-gray-800 mb-6">
