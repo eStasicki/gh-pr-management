@@ -16,10 +16,20 @@ export function createActionsHandlers(
     dispatch("changeSelectedBase");
   }
 
+  function handleRemoveLabels() {
+    dispatch("removeLabels");
+  }
+
+  function handleAddLabels() {
+    dispatch("addLabels");
+  }
+
   return {
     handleSelectAll,
     handleRefresh,
     handleChangeSelectedBase,
+    handleRemoveLabels,
+    handleAddLabels,
   };
 }
 

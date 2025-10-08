@@ -3,7 +3,13 @@
   import { translations } from "$lib/translations";
   import { browser } from "$app/environment";
   import { githubAPI } from "$lib/services/github-api";
-  import { selectedPRs, updatePRs, prs, validateAuth } from "$lib/stores";
+  import {
+    selectedPRs,
+    updatePRs,
+    prs,
+    validateAuth,
+    refreshLabels,
+  } from "$lib/stores";
   import Modal from "../Modal.svelte";
   import BranchSelector from "../BranchSelector.svelte"; // Single-select branch picker
   import LabelSelector from "../LabelSelector.svelte"; // Multi-select label picker
@@ -33,6 +39,11 @@
     handleModalClose();
   }
 
+  // Refresh labels when modal opens
+  $: if (isOpen) {
+    refreshLabels();
+  }
+
   function handleConfirm() {
     if (baseBranch.trim() && $selectedPRs.length > 0) {
       processPRs();
@@ -47,13 +58,17 @@
     selectedLabels = labels;
   }
 
-  function handleModalClose() {
+  async function handleModalClose() {
     if (!isProcessing) {
       baseBranch = "";
       addLabels = false;
       selectedLabels = [];
       processingResults = [];
       showResults = false;
+
+      // Refresh labels when closing modal to ensure fresh data next time
+      await refreshLabels();
+
       onClose();
     }
   }
@@ -70,14 +85,28 @@
     return pr ? pr.labels : [];
   }
 
-  function convertStringLabelsToGitHubLabels(labelNames: string[]) {
-    // This is a simplified conversion - in a real app you'd want to fetch full label data
-    return labelNames.map((name) => ({
-      id: Math.random(), // Temporary ID
-      name: name,
-      color: "e0e0e0", // Default color
-      description: "",
-    }));
+  async function convertStringLabelsToGitHubLabels(labelNames: string[]) {
+    try {
+      const allLabels = await githubAPI.getLabels();
+      return labelNames.map((name) => {
+        const existingLabel = allLabels.find((label) => label.name === name);
+        return {
+          id: Math.random(), // GitHub API doesn't return ID for labels
+          name: name,
+          color: existingLabel?.color || "e0e0e0",
+          description: "",
+        };
+      });
+    } catch (error) {
+      console.error("Failed to fetch labels:", error);
+      // Fallback to default colors
+      return labelNames.map((name) => ({
+        id: Math.random(),
+        name: name,
+        color: "e0e0e0",
+        description: "",
+      }));
+    }
   }
 
   async function processPRs() {
@@ -117,21 +146,36 @@
 
     if (successfulPRs.length > 0) {
       // Update each PR individually to preserve their existing labels
+      const newLabelsData =
+        addLabels && selectedLabels.length > 0
+          ? await convertStringLabelsToGitHubLabels(selectedLabels)
+          : [];
+
       successfulPRs.forEach((prNumber) => {
         const currentLabels = getCurrentLabels(prNumber);
-        const newLabels =
-          addLabels && selectedLabels.length > 0
-            ? [
-                ...currentLabels,
-                ...convertStringLabelsToGitHubLabels(selectedLabels),
-              ]
-            : currentLabels;
+        let newLabels = currentLabels;
+
+        if (addLabels && selectedLabels.length > 0) {
+          const currentLabelNames = currentLabels.map((label) => label.name);
+
+          // Filter out labels that already exist
+          const labelsToAdd = newLabelsData.filter(
+            (newLabel) => !currentLabelNames.includes(newLabel.name)
+          );
+
+          newLabels = [...currentLabels, ...labelsToAdd];
+        }
 
         updatePRs([prNumber], {
           base: { ref: baseBranch.trim() },
           labels: newLabels,
         });
       });
+
+      // Refresh labels in the global store
+      if (addLabels) {
+        await refreshLabels();
+      }
     }
   }
 </script>

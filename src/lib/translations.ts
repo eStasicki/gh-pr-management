@@ -84,6 +84,11 @@ export const translations: Translations = {
     loading_labels: "Ładowanie labeli...",
     no_labels_found: "Nie znaleziono labeli",
     no_labels_available: "Brak dostępnych labeli",
+    remove_labels_help: "Wybierz labele do usunięcia z wybranych PR",
+    add_labels_help: "Wybierz labele do dodania do wybranych PR",
+    common_labels: "Wspólne labele",
+    operation_results: "Wyniki operacji",
+    close: "Zamknij",
   },
   en: {
     config_title: "Configuration",
@@ -168,5 +173,10 @@ export const translations: Translations = {
     loading_labels: "Loading labels...",
     no_labels_found: "No labels found",
     no_labels_available: "No labels available",
+    remove_labels_help: "Select labels to remove from selected PRs",
+    add_labels_help: "Select labels to add to selected PRs",
+    common_labels: "Common labels",
+    operation_results: "Operation results",
+    close: "Close",
   },
 };

@@ -18,3 +18,10 @@ export {
   searchTerm,
   updatePRs,
 } from "./prs";
+export {
+  labels,
+  isLoadingLabels,
+  labelsError,
+  loadLabels,
+  refreshLabels,
+} from "./labels";

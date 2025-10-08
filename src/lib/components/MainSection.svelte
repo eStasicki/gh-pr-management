@@ -12,6 +12,8 @@
   import { browser } from "$app/environment";
   import PRList from "./PRList.svelte";
   import ChangeSelectedBaseModal from "./modals/ChangeSelectedBaseModal.svelte";
+  import RemoveLabelsModal from "./modals/RemoveLabelsModal.svelte";
+  import AddLabelsModal from "./modals/AddLabelsModal.svelte";
   import ActionsMenu from "./ActionsMenu.svelte";
   import { loadUser, loadPRs, getAllUserPRs } from "$lib/utils/apiUtils";
   import { createPRSelectionHandlers } from "$lib/utils/prUtils";
@@ -19,6 +21,8 @@
   let t = translations.pl;
   let prListComponent: any;
   let changeSelectedBaseModalOpen = false;
+  let removeLabelsModalOpen = false;
+  let addLabelsModalOpen = false;
   let allUserPRs: any[] = [];
 
   $: if (browser) {
@@ -92,13 +96,42 @@
             changeSelectedBaseModalOpen = true;
           }
         }}
+        on:removeLabels={() => {
+          if ($selectedPRs.length > 0) {
+            removeLabelsModalOpen = true;
+          }
+        }}
+        on:addLabels={() => {
+          if ($selectedPRs.length > 0) {
+            addLabelsModalOpen = true;
+          }
+        }}
       />
     </div>
 
     {#if $selectedPRs.length > 0}
-      <div class="text-sm text-gray-500 mb-6">
-        <span class="text-primary-600 font-semibold">
+      <div class="text-sm text-gray-500 mb-6 flex items-center justify-between">
+        <span class="text-primary-600 font-semibold flex items-center">
           {t.selected}: {$selectedPRs.length}
+          <button
+            on:click={() => selectedPRs.set([])}
+            class="text-gray-400 hover:text-red-500 transition-colors duration-200 p-1 rounded-full hover:bg-red-50 relative top-[1px] ml-1"
+            title="Clear selection"
+          >
+            <svg
+              class="w-4 h-4"
+              fill="none"
+              stroke="currentColor"
+              viewBox="0 0 24 24"
+            >
+              <path
+                stroke-linecap="round"
+                stroke-linejoin="round"
+                stroke-width="2"
+                d="M6 18L18 6M6 6l12 12"
+              ></path>
+            </svg>
+          </button>
         </span>
       </div>
     {/if}
@@ -114,4 +147,14 @@
 <ChangeSelectedBaseModal
   bind:isOpen={changeSelectedBaseModalOpen}
   onClose={() => (changeSelectedBaseModalOpen = false)}
+/>
+
+<RemoveLabelsModal
+  bind:isOpen={removeLabelsModalOpen}
+  onClose={() => (removeLabelsModalOpen = false)}
+/>
+
+<AddLabelsModal
+  bind:isOpen={addLabelsModalOpen}
+  onClose={() => (addLabelsModalOpen = false)}
 />

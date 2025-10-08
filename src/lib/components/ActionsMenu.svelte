@@ -6,6 +6,8 @@
   import SelectAllAction from "./actionsMenu/SelectAllAction.svelte";
   import RefreshAction from "./actionsMenu/RefreshAction.svelte";
   import ChangeSelectedBaseAction from "./actionsMenu/ChangeSelectedBaseAction.svelte";
+  import RemoveLabelsAction from "./actionsMenu/RemoveLabelsAction.svelte";
+  import AddLabelsAction from "./actionsMenu/AddLabelsAction.svelte";
   import { createActionsHandlers } from "$lib/utils/actionsUtils";
   import {
     createDropdownHandlers,
@@ -126,6 +128,18 @@
         <ChangeSelectedBaseAction
           on:changeSelectedBase={() => {
             actionsHandlers.handleChangeSelectedBase();
+            actionsDropdownOpen = dropdownHandlers.closeDropdown();
+          }}
+        />
+        <RemoveLabelsAction
+          on:removeLabels={() => {
+            actionsHandlers.handleRemoveLabels();
+            actionsDropdownOpen = dropdownHandlers.closeDropdown();
+          }}
+        />
+        <AddLabelsAction
+          on:addLabels={() => {
+            actionsHandlers.handleAddLabels();
             actionsDropdownOpen = dropdownHandlers.closeDropdown();
           }}
         />
