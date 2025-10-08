@@ -4,12 +4,14 @@
     tokenHistory,
     addTokenToHistory,
     validateAuth,
+    auth,
   } from "$lib/stores";
   import { language } from "$lib/stores/language";
   import { translations } from "$lib/translations";
   import { browser } from "$app/environment";
   import { onMount } from "svelte";
   import { get } from "svelte/store";
+  import ConnectionLostModal from "./modals/ConnectionLostModal.svelte";
 
   let t = translations.pl;
   let token = "";
@@ -67,7 +69,12 @@
     });
 
     // Force immediate validation after config is saved
-    await validateAuth(true);
+    try {
+      await validateAuth(true);
+    } catch (error) {
+      console.error("Validation error:", error);
+      // The auth store will handle showing the modal if validation fails
+    }
   }
 </script>
 
@@ -208,3 +215,5 @@
     </button>
   </div>
 </div>
+
+<ConnectionLostModal bind:isOpen={$auth.showConnectionLostModal} />
