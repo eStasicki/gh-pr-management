@@ -48,6 +48,18 @@ class GitHubAPI {
     };
   }
 
+  async validateAuth(): Promise<boolean> {
+    try {
+      const response = await fetch(`${this.getApiBaseUrl()}/user`, {
+        headers: this.getHeaders(),
+      });
+
+      return response.ok;
+    } catch (error) {
+      return false;
+    }
+  }
+
   async getUser(): Promise<GitHubUser> {
     const response = await fetch(`${this.getApiBaseUrl()}/user`, {
       headers: this.getHeaders(),
