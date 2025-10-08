@@ -10,6 +10,7 @@
     searchTerm,
     selectedPRs,
   } from "$lib/stores";
+  import { auth } from "$lib/stores";
   import { language } from "$lib/stores/language";
   import { translations } from "$lib/translations";
   import { browser } from "$app/environment";
@@ -59,6 +60,11 @@
   // Reactive function for checking if PR is selected
   function isPRSelected(prNumber: number): boolean {
     return selectedPRsMap.has(prNumber);
+  }
+
+  // Generate skeleton loading items
+  function generateSkeletonItems(count: number = 5) {
+    return Array.from({ length: count }, (_, i) => i);
   }
 
   export async function toggleAllPRs() {
@@ -141,6 +147,34 @@
         <p class="text-gray-600 font-medium">{t.loading}</p>
       </div>
     </div>
+  {:else if $auth.showConnectionLostModal}
+    {#each generateSkeletonItems() as skeletonItem}
+      <div
+        role="status"
+        class="rounded-xl p-5 border-2 border-gray-200 bg-gray-50 animate-pulse"
+      >
+        <div class="flex justify-between items-start mb-3">
+          <div class="flex items-start gap-3 flex-1">
+            <div class="h-6 bg-gray-200 rounded w-3/4"></div>
+          </div>
+          <div class="h-6 bg-gray-200 rounded w-12 flex-shrink-0"></div>
+        </div>
+
+        <div class="flex flex-col lg:items-center lg:flex-row gap-2 mb-3">
+          <div class="h-4 bg-gray-200 rounded w-20"></div>
+          <div class="h-4 bg-gray-200 rounded w-32"></div>
+          <div class="h-4 bg-gray-200 rounded w-16"></div>
+          <div class="h-4 bg-gray-200 rounded w-40"></div>
+        </div>
+
+        <div class="flex flex-wrap gap-2">
+          <div class="h-6 bg-gray-200 rounded w-16"></div>
+          <div class="h-6 bg-gray-200 rounded w-20"></div>
+          <div class="h-6 bg-gray-200 rounded w-12"></div>
+        </div>
+        <span class="sr-only">Loading...</span>
+      </div>
+    {/each}
   {:else if filteredPRs.length === 0}
     <div class="text-center py-12">
       <p class="text-gray-500 text-lg">{t.no_prs_found}</p>
