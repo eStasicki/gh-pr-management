@@ -7,7 +7,6 @@
     currentPage,
     totalPages,
     totalPRs,
-    searchTerm,
     selectedPRs,
   } from "$lib/stores";
   import { auth } from "$lib/stores";
@@ -20,26 +19,6 @@
 
   $: if (browser) {
     t = translations[$language];
-  }
-
-  // Watch for search term changes and reload data with debouncing
-  let searchTimeout: number;
-
-  $: if ($searchTerm !== undefined) {
-    // Clear previous timeout
-    if (searchTimeout) {
-      clearTimeout(searchTimeout);
-    }
-
-    // Set new timeout for debounced search
-    searchTimeout = setTimeout(() => {
-      // Reset to page 1 when search term changes
-      if ($searchTerm !== "") {
-        currentPage.set(1);
-      }
-      // Trigger reload with new search term
-      loadPRsForPage(1);
-    }, 500); // 500ms debounce
   }
 
   // No client-side filtering needed - search is done server-side
@@ -67,6 +46,9 @@
     return Array.from({ length: count }, (_, i) => i);
   }
 
+  export let onLoadPRs: (page: number) => void;
+  export let onGetAllUserPRs: () => Promise<any[]>;
+
   export async function toggleAllPRs() {
     // Check if all user's PRs are selected (not just current page)
     const allUserPRsSelected = await checkIfAllUserPRsSelected();
@@ -92,23 +74,10 @@
   }
 
   async function getAllUserPRs(): Promise<any[]> {
-    // This will be handled by the parent component
-    // We'll emit an event to get all user PRs
-    return new Promise((resolve) => {
-      const handleResponse = (event: CustomEvent) => {
-        window.removeEventListener(
-          "allUserPRsResponse",
-          handleResponse as EventListener
-        );
-        resolve(event.detail.prs);
-      };
-
-      window.addEventListener(
-        "allUserPRsResponse",
-        handleResponse as EventListener
-      );
-      window.dispatchEvent(new CustomEvent("getAllUserPRs"));
-    });
+    if (onGetAllUserPRs) {
+      return await onGetAllUserPRs();
+    }
+    return [];
   }
 
   function goToPage(page: number) {
@@ -130,10 +99,9 @@
   }
 
   async function loadPRsForPage(page: number) {
-    // This will be handled by the parent component
-    // We'll emit an event to trigger the load
-    const event = new CustomEvent("loadPRs", { detail: { page } });
-    window.dispatchEvent(event);
+    if (onLoadPRs) {
+      onLoadPRs(page);
+    }
   }
 </script>
 

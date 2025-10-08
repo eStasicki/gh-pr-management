@@ -1,8 +1,13 @@
 <script lang="ts">
+  import { onMount } from "svelte";
   import { currentUser, config, selectedPRs, auth } from "$lib/stores";
   import { translations } from "$lib/translations";
   import { language } from "$lib/stores/language";
   import { browser } from "$app/environment";
+  import {
+    createDropdownHandlers,
+    createClickOutsideHandlerWithSelector,
+  } from "$lib/utils/uiUtils";
 
   let t = translations.pl;
   let isDropdownOpen = false;
@@ -11,9 +16,24 @@
     t = translations[$language];
   }
 
-  function toggleDropdown() {
-    isDropdownOpen = !isDropdownOpen;
-  }
+  const dropdownHandlers = createDropdownHandlers();
+  let clickOutsideHandler: ReturnType<
+    typeof createClickOutsideHandlerWithSelector
+  >;
+
+  onMount(() => {
+    clickOutsideHandler = createClickOutsideHandlerWithSelector(
+      ".user-account-container",
+      () => {
+        isDropdownOpen = dropdownHandlers.closeDropdown();
+      }
+    );
+    clickOutsideHandler.addEventListener();
+
+    return () => {
+      clickOutsideHandler.removeEventListener();
+    };
+  });
 
   function logout() {
     config.set({
@@ -27,18 +47,9 @@
       localStorage.removeItem("selectedPRs");
       selectedPRs.set([]);
     }
-    isDropdownOpen = false;
-  }
-
-  function handleClickOutside(event: MouseEvent) {
-    const target = event.target as HTMLElement;
-    if (!target.closest(".user-account-container")) {
-      isDropdownOpen = false;
-    }
+    isDropdownOpen = dropdownHandlers.closeDropdown();
   }
 </script>
-
-<svelte:window on:click={handleClickOutside} />
 
 {#if $auth.isValidating}
   <div
@@ -67,7 +78,8 @@
 {:else if $auth.isLoggedIn}
   <div class="relative user-account-container">
     <button
-      on:click={toggleDropdown}
+      on:click={() =>
+        (isDropdownOpen = dropdownHandlers.toggleDropdown(isDropdownOpen))}
       aria-label={$currentUser?.name}
       class="flex items-center justify-center w-10 h-10 rounded-full bg-gray-200 hover:bg-gray-300 transition-colors duration-200 focus:outline-none focus:ring-2 focus:ring-blue-500 cursor-pointer"
     >

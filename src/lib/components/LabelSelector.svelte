@@ -1,9 +1,23 @@
 <script lang="ts">
   import { onMount } from "svelte";
-  import { githubAPI } from "$lib/services/github-api";
   import { language } from "$lib/stores/language";
   import { translations } from "$lib/translations";
   import { browser } from "$app/environment";
+  import {
+    labels,
+    isLoadingLabels,
+    labelsError,
+    loadLabels,
+  } from "$lib/stores";
+  import {
+    createDropdownHandlers,
+    createClickOutsideHandler,
+  } from "$lib/utils/uiUtils";
+  import {
+    createEscapeKeyHandler,
+    createArrowKeyHandler,
+  } from "$lib/utils/keyboardUtils";
+  import { createArrayToggleHandler } from "$lib/utils/arrayUtils";
 
   // Multi-select label picker
   export let selectedLabels: string[] = [];
@@ -11,12 +25,9 @@
 
   let t = translations.pl;
 
-  let allLabels: Array<{ name: string; color: string }> = [];
   let filteredLabels: Array<{ name: string; color: string }> = [];
   let searchTerm = "";
   let isOpen = false;
-  let isLoading = false;
-  let error = "";
   let selectedIndex = -1;
   let dropdownElement: HTMLDivElement;
 
@@ -24,9 +35,16 @@
     t = translations[$language];
   }
 
+  const dropdownHandlers = createDropdownHandlers();
+  let arrayHandlers = createArrayToggleHandler(selectedLabels, onLabelsChange);
+
+  $: arrayHandlers = createArrayToggleHandler(selectedLabels, onLabelsChange);
+  let escapeKeyHandler: ReturnType<typeof createEscapeKeyHandler>;
+  let arrowKeyHandler: ReturnType<typeof createArrowKeyHandler>;
+
   $: {
     if (searchTerm.trim()) {
-      const filtered = allLabels.filter((label) =>
+      const filtered = $labels.filter((label) =>
         label.name.toLowerCase().includes(searchTerm.toLowerCase())
       );
 
@@ -40,10 +58,10 @@
       filteredLabels = [...selectedInFiltered, ...unselectedInFiltered];
     } else {
       // Move selected labels to top when no search
-      const selectedLabels_ = allLabels.filter((label) =>
+      const selectedLabels_ = $labels.filter((label) =>
         selectedLabels.includes(label.name)
       );
-      const unselectedLabels = allLabels.filter(
+      const unselectedLabels = $labels.filter(
         (label) => !selectedLabels.includes(label.name)
       );
       filteredLabels = [...selectedLabels_, ...unselectedLabels];
@@ -57,35 +75,21 @@
     await loadLabels();
   });
 
-  async function loadLabels() {
-    isLoading = true;
-    error = "";
-    try {
-      allLabels = await githubAPI.getLabels();
-      filteredLabels = allLabels;
-    } catch (err) {
-      error = err instanceof Error ? err.message : "Failed to load labels";
-    } finally {
-      isLoading = false;
-    }
+  // Export function to refresh labels from parent component
+  export async function refreshLabels() {
+    await loadLabels();
   }
 
   function toggleLabel(labelName: string) {
-    if (selectedLabels.includes(labelName)) {
-      selectedLabels = selectedLabels.filter((name) => name !== labelName);
-    } else {
-      selectedLabels = [...selectedLabels, labelName];
-    }
-    onLabelsChange(selectedLabels);
+    arrayHandlers.toggleItem(labelName);
   }
 
   function removeLabel(labelName: string) {
-    selectedLabels = selectedLabels.filter((name) => name !== labelName);
-    onLabelsChange(selectedLabels);
+    arrayHandlers.removeItem(labelName);
   }
 
   function toggleDropdown() {
-    isOpen = !isOpen;
+    isOpen = dropdownHandlers.toggleDropdown(isOpen);
     if (isOpen) {
       searchTerm = "";
       selectedIndex = -1;
@@ -93,7 +97,7 @@
   }
 
   function openDropdown() {
-    isOpen = true;
+    isOpen = dropdownHandlers.toggleDropdown(isOpen);
     searchTerm = "";
     selectedIndex = -1;
   }
@@ -101,29 +105,8 @@
   function handleKeydown(event: KeyboardEvent) {
     if (!isOpen) return;
 
-    switch (event.key) {
-      case "Escape":
-        isOpen = false;
-        searchTerm = "";
-        selectedIndex = -1;
-        break;
-      case "ArrowDown":
-        event.preventDefault();
-        selectedIndex = Math.min(selectedIndex + 1, filteredLabels.length - 1);
-        scrollToSelectedItem();
-        break;
-      case "ArrowUp":
-        event.preventDefault();
-        selectedIndex = Math.max(selectedIndex - 1, 0);
-        scrollToSelectedItem();
-        break;
-      case "Enter":
-        event.preventDefault();
-        if (selectedIndex >= 0 && selectedIndex < filteredLabels.length) {
-          toggleLabel(filteredLabels[selectedIndex].name);
-        }
-        break;
-    }
+    escapeKeyHandler.handleKeydown(event);
+    arrowKeyHandler.handleKeydown(event);
   }
 
   function scrollToSelectedItem() {
@@ -140,27 +123,24 @@
     }
   }
 
-  // Close dropdown when clicking outside
-  function handleClickOutside(event: MouseEvent) {
-    if (dropdownElement && !dropdownElement.contains(event.target as Node)) {
-      // Don't close if clicking on the input or button
-      const target = event.target as HTMLElement;
-      if (
-        target &&
-        (target.id === "label-selector" ||
-          target.closest('button[aria-label="Toggle labels dropdown"]'))
-      ) {
-        return;
-      }
-      isOpen = false;
-    }
-  }
-
   onMount(() => {
-    document.addEventListener("click", handleClickOutside);
-    return () => {
-      document.removeEventListener("click", handleClickOutside);
-    };
+    escapeKeyHandler = createEscapeKeyHandler(() => {
+      isOpen = dropdownHandlers.closeDropdown();
+      searchTerm = "";
+      selectedIndex = -1;
+    });
+
+    arrowKeyHandler = createArrowKeyHandler(
+      filteredLabels,
+      selectedIndex,
+      (index) => {
+        selectedIndex = index;
+        scrollToSelectedItem();
+      },
+      (label) => {
+        toggleLabel(label.name);
+      }
+    );
   });
 </script>
 
@@ -178,9 +158,8 @@
         {#each selectedLabels as labelName}
           <span
             class="inline-flex items-center px-2.5 py-1 rounded-full text-xs font-medium text-white shadow-sm"
-            style="background-color: #{allLabels.find(
-              (l) => l.name === labelName
-            )?.color || 'e0e0e0'};"
+            style="background-color: #{$labels.find((l) => l.name === labelName)
+              ?.color || 'e0e0e0'};"
           >
             {labelName}
             <button
@@ -213,7 +192,7 @@
       id="label-selector"
       type="text"
       bind:value={searchTerm}
-      on:focus={openDropdown}
+      on:click={openDropdown}
       on:keydown={handleKeydown}
       placeholder={t.select_labels}
       class="w-full px-4 py-3 border-2 border-gray-200 rounded-lg text-base transition-colors focus:outline-none focus:border-blue-500 focus:ring-4 focus:ring-blue-100"
@@ -248,16 +227,16 @@
       bind:this={dropdownElement}
       class="absolute z-10 w-full mt-1 bg-white border border-gray-200 rounded-lg shadow-lg max-h-60 overflow-y-auto"
     >
-      {#if isLoading}
+      {#if $isLoadingLabels}
         <div class="p-4 text-center text-gray-500">
           <div
             class="inline-block animate-spin rounded-full h-6 w-6 border-b-2 border-blue-600"
           ></div>
           <p class="mt-2">{t.loading_labels}</p>
         </div>
-      {:else if error}
+      {:else if $labelsError}
         <div class="p-4 text-center text-red-500">
-          <p class="mb-2">{error}</p>
+          <p class="mb-2">{$labelsError}</p>
           <button
             on:click={loadLabels}
             class="text-blue-600 hover:text-blue-800 underline"
