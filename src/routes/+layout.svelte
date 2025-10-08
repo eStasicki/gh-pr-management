@@ -3,6 +3,8 @@
   import LanguageSwitcher from "$lib/components/LanguageSwitcher.svelte";
   import { page } from "$app/stores";
   import UserAccount from "$lib/components/UserAccount.svelte";
+  import ConnectionLostModal from "$lib/components/modals/ConnectionLostModal.svelte";
+  import { auth } from "$lib/stores";
 </script>
 
 <div
@@ -26,3 +28,5 @@
     </div>
   </div>
 </div>
+
+<ConnectionLostModal bind:isOpen={$auth.showConnectionLostModal} />

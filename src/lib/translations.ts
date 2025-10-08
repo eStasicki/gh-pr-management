@@ -48,6 +48,10 @@ export const translations: Translations = {
     add_labels: "Dodaj etykiety",
     remove_labels: "Usuń etykiety",
     cancel: "Anuluj",
+    connection_lost_title: "Połączenie utracone",
+    connection_lost_message:
+      "Połączenie utracone. Najprawdopodobniej nie posiadasz włączonego VPN. Włącz VPN aby nawiązać połączenie z aplikacją ponownie.",
+    retry_connection: "Spróbuj ponownie",
     previous: "Poprzednia",
     next: "Następna",
     author: "Autor",
@@ -126,6 +130,10 @@ export const translations: Translations = {
     add_labels: "Add labels",
     remove_labels: "Remove labels",
     cancel: "Cancel",
+    connection_lost_title: "Connection Lost",
+    connection_lost_message:
+      "Connection lost. You probably don't have VPN enabled. Enable VPN to reconnect to the application.",
+    retry_connection: "Retry Connection",
     previous: "Previous",
     next: "Next",
     author: "Author",
