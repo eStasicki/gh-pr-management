@@ -15,7 +15,6 @@
   import { translations } from "$lib/translations";
   import { browser } from "$app/environment";
   import PRList from "./PRList.svelte";
-  import ActionsPanel from "./ActionsPanel.svelte";
   import ChangeSelectedBaseModal from "./modals/ChangeSelectedBaseModal.svelte";
 
   let t = translations.pl;
@@ -450,8 +449,6 @@
 
     <PRList bind:this={prListComponent} />
   </div>
-
-  <ActionsPanel />
 </div>
 
 <ChangeSelectedBaseModal
