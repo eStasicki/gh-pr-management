@@ -85,14 +85,6 @@
     processingResults = [];
     showResults = false;
 
-    try {
-      // Validate auth before processing PRs
-      await validateAuth(true);
-    } catch (error) {
-      isProcessing = false;
-      return;
-    }
-
     for (let i = 0; i < $selectedPRs.length; i++) {
       const prNumber = $selectedPRs[i];
       currentProcessingPR = prNumber;

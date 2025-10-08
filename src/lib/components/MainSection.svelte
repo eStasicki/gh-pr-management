@@ -65,9 +65,6 @@
 
   async function loadUser() {
     try {
-      // Validate auth before loading user
-      await validateAuth(true);
-
       const response = await fetch(`${getApiBaseUrl()}/user`, {
         headers: {
           Authorization: `token ${$config.token}`,
@@ -92,8 +89,6 @@
 
     isLoading.set(true);
     try {
-      // Validate auth before loading PRs
-      await validateAuth(true);
       const perPage = 20;
       let searchQuery = `repo:${$config.owner}/${$config.repo} is:pr is:open author:${$currentUser.login}`;
 
@@ -248,8 +243,6 @@
     }
 
     try {
-      // Validate auth before loading all user PRs
-      await validateAuth(true);
       const allPRs = [];
       let page = 1;
       const perPage = 1000; // Use larger page size for efficiency
