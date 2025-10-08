@@ -1,5 +1,10 @@
 <script lang="ts">
-  import { config, tokenHistory, addTokenToHistory } from "$lib/stores";
+  import {
+    config,
+    tokenHistory,
+    addTokenToHistory,
+    validateAuth,
+  } from "$lib/stores";
   import { language } from "$lib/stores/language";
   import { translations } from "$lib/translations";
   import { browser } from "$app/environment";
@@ -46,7 +51,7 @@
     }
   }
 
-  function saveConfig() {
+  async function saveConfig() {
     if (!token || !owner || !repo) {
       alert(t.enter_base_branch);
       return;
@@ -60,6 +65,9 @@
       repo,
       enterpriseUrl,
     });
+
+    // Force immediate validation after config is saved
+    await validateAuth(true);
   }
 </script>
 

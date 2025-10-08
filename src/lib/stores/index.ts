@@ -1,6 +1,6 @@
 export { config } from "./config";
 export { language } from "./language";
-export { auth } from "./auth";
+export { auth, validateAuth } from "./auth";
 export {
   tokenHistory,
   addTokenToHistory,

@@ -41,7 +41,8 @@ async function validateAuth(force = false) {
   const currentState = get(auth);
   const timeSinceLastValidation = Date.now() - currentState.lastValidation;
 
-  if (!force && timeSinceLastValidation < 30000) {
+  // Only skip validation if not forced and validation was recent (but allow immediate validation on config change)
+  if (!force && timeSinceLastValidation < 5000) {
     return;
   }
 
@@ -136,9 +137,12 @@ function startConnectionMonitoring() {
   });
 }
 
+// Export validateAuth function for external use
+export { validateAuth };
+
 if (browser) {
   config.subscribe(() => {
-    validateAuth();
+    validateAuth(true); // Force validation on config change
   });
 
   setupApiErrorHandling();
