@@ -2,7 +2,7 @@
   import { language } from "$lib/stores/language";
   import { translations } from "$lib/translations";
   import { browser } from "$app/environment";
-  import { auth } from "$lib/stores";
+  import { auth, validateAuth } from "$lib/stores";
   import Modal from "../Modal.svelte";
 
   export let isOpen = false;
@@ -13,12 +13,21 @@
     t = translations[$language];
   }
 
-  function handleRetry() {
+  async function handleRetry() {
+    // Clear error and close modal first
     auth.update((state) => ({
       ...state,
       connectionError: null,
+      showConnectionLostModal: false,
     }));
     isOpen = false;
+
+    // Force immediate validation
+    try {
+      await validateAuth(true);
+    } catch (error) {
+      // The auth store will handle showing the modal again if validation fails
+    }
   }
 
   function handleModalClose() {

@@ -72,7 +72,6 @@
     try {
       await validateAuth(true);
     } catch (error) {
-      console.error("Validation error:", error);
       // The auth store will handle showing the modal if validation fails
     }
   }

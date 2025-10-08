@@ -54,9 +54,13 @@ class GitHubAPI {
         headers: this.getHeaders(),
       });
 
-      return response.ok;
+      if (!response.ok) {
+        throw new Error(`HTTP ${response.status}: ${response.statusText}`);
+      }
+
+      return true;
     } catch (error) {
-      return false;
+      throw error; // Re-throw the error so it can be caught by the auth store
     }
   }
 
