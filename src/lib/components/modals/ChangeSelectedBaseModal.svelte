@@ -3,7 +3,7 @@
   import { translations } from "$lib/translations";
   import { browser } from "$app/environment";
   import { githubAPI } from "$lib/services/github-api";
-  import { selectedPRs, updatePRs, prs } from "$lib/stores";
+  import { selectedPRs, updatePRs, prs, validateAuth } from "$lib/stores";
   import Modal from "../Modal.svelte";
   import BranchSelector from "../BranchSelector.svelte"; // Single-select branch picker
   import LabelSelector from "../LabelSelector.svelte"; // Multi-select label picker
@@ -84,6 +84,14 @@
     isProcessing = true;
     processingResults = [];
     showResults = false;
+
+    try {
+      // Validate auth before processing PRs
+      await validateAuth(true);
+    } catch (error) {
+      isProcessing = false;
+      return;
+    }
 
     for (let i = 0; i < $selectedPRs.length; i++) {
       const prNumber = $selectedPRs[i];

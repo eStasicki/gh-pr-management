@@ -116,13 +116,7 @@ function setupApiErrorHandling() {
 function startConnectionMonitoring() {
   if (!browser) return;
 
-  setInterval(() => {
-    const currentState = get(auth);
-    if (currentState.isLoggedIn) {
-      validateAuth();
-    }
-  }, 60000);
-
+  // Only listen to online/offline events, no periodic validation
   window.addEventListener("online", () => {
     validateAuth(true);
   });

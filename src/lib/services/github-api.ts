@@ -1,4 +1,4 @@
-import { config } from "$lib/stores";
+import { config, validateAuth } from "$lib/stores";
 import { get } from "svelte/store";
 
 export interface GitHubPR {
@@ -95,6 +95,9 @@ class GitHubAPI {
   }
 
   async updatePRBase(prNumber: number, newBase: string): Promise<void> {
+    // Validate auth before updating PR
+    await validateAuth(true);
+
     const currentConfig = get(config);
     const response = await fetch(
       `${this.getApiBaseUrl()}/repos/${currentConfig.owner}/${
@@ -121,6 +124,9 @@ class GitHubAPI {
   }
 
   async addLabelsToPR(prNumber: number, labels: string[]): Promise<void> {
+    // Validate auth before adding labels
+    await validateAuth(true);
+
     const currentConfig = get(config);
     const response = await fetch(
       `${this.getApiBaseUrl()}/repos/${currentConfig.owner}/${
@@ -147,6 +153,9 @@ class GitHubAPI {
   }
 
   async removeLabelsFromPR(prNumber: number, labels: string[]): Promise<void> {
+    // Validate auth before removing labels
+    await validateAuth(true);
+
     const currentConfig = get(config);
 
     // GitHub API requires removing labels one by one
@@ -173,6 +182,9 @@ class GitHubAPI {
   async updateAllPRsBase(
     newBase: string
   ): Promise<{ success: number; failed: number; errors: string[] }> {
+    // Validate auth before updating all PRs
+    await validateAuth(true);
+
     const prs = await this.getPRs();
     const results = { success: 0, failed: 0, errors: [] as string[] };
 
@@ -197,6 +209,9 @@ class GitHubAPI {
     newBase: string,
     labels: string[]
   ): Promise<{ success: number; failed: number; errors: string[] }> {
+    // Validate auth before updating PRs and labels
+    await validateAuth(true);
+
     const prs = await this.getPRs();
     const results = { success: 0, failed: 0, errors: [] as string[] };
 
@@ -228,6 +243,9 @@ class GitHubAPI {
     action: "add" | "remove",
     labels: string[]
   ): Promise<{ success: number; failed: number; errors: string[] }> {
+    // Validate auth before managing labels on all PRs
+    await validateAuth(true);
+
     const prs = await this.getPRs();
     const results = { success: 0, failed: 0, errors: [] as string[] };
 
