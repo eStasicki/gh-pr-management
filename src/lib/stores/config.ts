@@ -1,12 +1,15 @@
 import { writable } from "svelte/store";
 import { browser } from "$app/environment";
 import type { GitHubConfig } from "$lib/types";
+import { settingsService } from "$lib/services/settingsService";
 
 const defaultConfig: GitHubConfig = {
   token: "",
   owner: "",
   repo: "",
   enterpriseUrl: "",
+  requiresVpn: false,
+  demoMode: false,
 };
 
 // Load config from localStorage only
@@ -27,24 +30,68 @@ function loadConfig(): GitHubConfig {
 
 export const config = writable<GitHubConfig>(defaultConfig);
 
-if (browser) {
-  // Load config from localStorage on client side
-  const stored = localStorage.getItem("gh_config");
-  if (stored) {
-    try {
-      const storedConfig = JSON.parse(stored);
-      console.log("Loaded config from localStorage:", storedConfig);
-      config.set(storedConfig);
-    } catch (e) {
-      console.error("Failed to parse stored config:", e);
-      config.set(defaultConfig);
+export const loadConfigFromSupabase = async (): Promise<GitHubConfig> => {
+  try {
+    const settings = await settingsService.getSettings();
+    if (settings) {
+      return {
+        token: settings.github_token,
+        owner: settings.repo_owner,
+        repo: settings.repo_name,
+        enterpriseUrl: settings.enterprise_url || "",
+        requiresVpn: settings.requires_vpn || false,
+      };
     }
-  } else {
-    console.log("No stored config found, using defaults");
-    config.set(defaultConfig);
+  } catch (error) {
+    console.error("Failed to load settings from Supabase:", error);
   }
 
-  // Save config to localStorage when it changes
+  return loadConfig();
+};
+
+export const saveConfigToSupabase = async (
+  config: GitHubConfig
+): Promise<void> => {
+  try {
+    await settingsService.saveSettings({
+      github_token: config.token,
+      repo_owner: config.owner,
+      repo_name: config.repo,
+      enterprise_url: config.enterpriseUrl,
+      requires_vpn: config.requiresVpn,
+    });
+  } catch (error) {
+    console.error("Failed to save settings to Supabase:", error);
+    throw error;
+  }
+};
+
+if (browser) {
+  // Load config from Supabase first, then localStorage as fallback
+  loadConfigFromSupabase().then((supabaseConfig) => {
+    if (supabaseConfig.token) {
+      console.log("Loaded config from Supabase:", supabaseConfig);
+      config.set(supabaseConfig);
+    } else {
+      // Fallback to localStorage
+      const stored = localStorage.getItem("gh_config");
+      if (stored) {
+        try {
+          const storedConfig = JSON.parse(stored);
+          console.log("Loaded config from localStorage:", storedConfig);
+          config.set(storedConfig);
+        } catch (e) {
+          console.error("Failed to parse stored config:", e);
+          config.set(defaultConfig);
+        }
+      } else {
+        console.log("No stored config found, using defaults");
+        config.set(defaultConfig);
+      }
+    }
+  });
+
+  // Save config to localStorage when it changes (as backup)
   config.subscribe((value) => {
     localStorage.setItem("gh_config", JSON.stringify(value));
   });

@@ -1,4 +1,4 @@
-export { config } from "./config";
+export { config, loadConfigFromSupabase, saveConfigToSupabase } from "./config";
 export { language } from "./language";
 export { auth, validateAuth } from "./auth";
 export {

@@ -8,6 +8,8 @@ import {
   totalPRs,
   searchTerm,
 } from "$lib/stores";
+import { isDemoMode } from "$lib/utils/demoMode";
+import { generateMockPRs, mockCurrentUser } from "$lib/mockData";
 
 export function getApiBaseUrl(configValue: any): string {
   if (configValue.enterpriseUrl) {
@@ -17,6 +19,12 @@ export function getApiBaseUrl(configValue: any): string {
 }
 
 export async function loadUser(configValue: any): Promise<void> {
+  if (isDemoMode()) {
+    // W trybie demo ustaw mock użytkownika
+    currentUser.set(mockCurrentUser);
+    return;
+  }
+
   try {
     const response = await fetch(`${getApiBaseUrl(configValue)}/user`, {
       headers: {
@@ -40,6 +48,27 @@ export async function loadPRs(
   currentUserValue: any,
   searchTermValue: string
 ): Promise<void> {
+  if (isDemoMode()) {
+    // W trybie demo użyj mock danych
+    isLoading.set(true);
+
+    // Symuluj opóźnienie API
+    await new Promise((resolve) => setTimeout(resolve, 300));
+
+    const allMockPRs = generateMockPRs(50);
+    const perPage = 20;
+    const startIndex = (page - 1) * perPage;
+    const endIndex = startIndex + perPage;
+    const pagePRs = allMockPRs.slice(startIndex, endIndex);
+
+    prs.set(pagePRs);
+    currentPage.set(page);
+    totalPages.set(Math.ceil(allMockPRs.length / perPage));
+    totalPRs.set(allMockPRs.length);
+    isLoading.set(false);
+    return;
+  }
+
   if (!currentUserValue?.login) {
     console.error("No current user available");
     return;
@@ -114,6 +143,11 @@ export async function getAllUserPRs(
   currentUserValue: any,
   searchTermValue: string
 ): Promise<any[]> {
+  if (isDemoMode()) {
+    // W trybie demo zwróć wszystkie mock PR
+    return generateMockPRs(50);
+  }
+
   if (!currentUserValue?.login) {
     console.error("No current user available");
     return [];

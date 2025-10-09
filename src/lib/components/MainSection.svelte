@@ -54,7 +54,7 @@
     });
   }
 
-  let searchTimeout: number;
+  let searchTimeout: ReturnType<typeof setTimeout>;
   $: if (typeof window !== "undefined" && $searchTerm !== undefined) {
     clearTimeout(searchTimeout);
     searchTimeout = setTimeout(() => {

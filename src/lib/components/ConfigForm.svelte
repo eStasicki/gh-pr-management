@@ -5,6 +5,8 @@
     addTokenToHistory,
     validateAuth,
     auth,
+    loadConfigFromSupabase,
+    saveConfigToSupabase,
   } from "$lib/stores";
   import { language } from "$lib/stores/language";
   import { translations } from "$lib/translations";
@@ -16,14 +18,25 @@
     createDropdownHandlers,
     createClickOutsideHandlerWithSelector,
   } from "$lib/utils/uiUtils";
+  import {
+    enableDemoMode,
+    disableDemoMode,
+    isDemoMode,
+  } from "$lib/utils/demoMode";
 
   let t = translations.pl;
   let token = "";
   let owner = "";
   let repo = "";
   let enterpriseUrl = "";
+  let useEnterprise = false;
+  let requiresVpn = false;
   let showTokenDropdown = false;
   let selectedTokenId = "";
+  let isLoading = false;
+  let isSaving = false;
+  let errorMessage = "";
+  let successMessage = "";
 
   $: if (browser) {
     t = translations[$language];
@@ -36,11 +49,41 @@
 
   onMount(() => {
     if (browser) {
-      const currentConfig = get(config);
-      token = currentConfig.token || "";
-      owner = currentConfig.owner || "";
-      repo = currentConfig.repo || "";
-      enterpriseUrl = currentConfig.enterpriseUrl || "";
+      isLoading = true;
+      loadConfigFromSupabase()
+        .then((supabaseConfig) => {
+          if (supabaseConfig.token) {
+            token = supabaseConfig.token;
+            owner = supabaseConfig.owner;
+            repo = supabaseConfig.repo;
+            enterpriseUrl = supabaseConfig.enterpriseUrl;
+            useEnterprise = !!supabaseConfig.enterpriseUrl;
+            requiresVpn = supabaseConfig.requiresVpn || false;
+          } else {
+            // Fallback do lokalnego store
+            const currentConfig = get(config);
+            token = currentConfig.token || "";
+            owner = currentConfig.owner || "";
+            repo = currentConfig.repo || "";
+            enterpriseUrl = currentConfig.enterpriseUrl || "";
+            useEnterprise = !!currentConfig.enterpriseUrl;
+            requiresVpn = currentConfig.requiresVpn || false;
+          }
+          isLoading = false;
+        })
+        .catch((error) => {
+          console.error("Error loading config:", error);
+          errorMessage = "Błąd podczas ładowania ustawień";
+          // Fallback do lokalnego store
+          const currentConfig = get(config);
+          token = currentConfig.token || "";
+          owner = currentConfig.owner || "";
+          repo = currentConfig.repo || "";
+          enterpriseUrl = currentConfig.enterpriseUrl || "";
+          useEnterprise = !!currentConfig.enterpriseUrl;
+          requiresVpn = currentConfig.requiresVpn || false;
+          isLoading = false;
+        });
     }
 
     clickOutsideHandler = createClickOutsideHandlerWithSelector(
@@ -69,29 +112,83 @@
 
   async function saveConfig() {
     if (!token || !owner || !repo) {
-      alert(t.enter_base_branch);
+      errorMessage = t.enter_base_branch;
       return;
     }
 
-    addTokenToHistory(token);
+    isSaving = true;
+    errorMessage = "";
+    successMessage = "";
 
-    config.set({
-      token,
-      owner,
-      repo,
-      enterpriseUrl,
-    });
-
-    // Force immediate validation after config is saved
     try {
+      // Zapisz do Supabase
+      await saveConfigToSupabase({
+        token,
+        owner,
+        repo,
+        enterpriseUrl: useEnterprise ? enterpriseUrl : "",
+        requiresVpn,
+      });
+
+      // Zapisz też lokalnie jako backup
+      addTokenToHistory(token);
+      config.set({
+        token,
+        owner,
+        repo,
+        enterpriseUrl: useEnterprise ? enterpriseUrl : "",
+        requiresVpn,
+      });
+
+      // Walidacja
       await validateAuth(true);
+
+      successMessage = "Ustawienia zostały zapisane pomyślnie!";
     } catch (error) {
-      // The auth store will handle showing the modal if validation fails
+      console.error("Error saving settings:", error);
+      errorMessage = "Błąd podczas zapisywania ustawień. Spróbuj ponownie.";
+    } finally {
+      isSaving = false;
     }
+  }
+
+  async function toggleDemoMode() {
+    if (isDemoMode()) {
+      disableDemoMode();
+      successMessage = "Tryb demo został wyłączony";
+    } else {
+      enableDemoMode();
+      successMessage = "Tryb demo został włączony - 50 przykładowych PR";
+    }
+
+    // Wyczyść komunikat po 3 sekundach
+    setTimeout(() => {
+      successMessage = "";
+    }, 3000);
   }
 </script>
 
 <div class="bg-white rounded-2xl p-8 mb-6 shadow-2xl">
+  {#if errorMessage || successMessage}
+    <div class="mb-6">
+      {#if errorMessage}
+        <div
+          class="p-4 bg-red-50 border border-red-200 rounded-lg text-red-700"
+        >
+          {errorMessage}
+        </div>
+      {/if}
+
+      {#if successMessage}
+        <div
+          class="p-4 bg-green-50 border border-green-200 rounded-lg text-green-700"
+        >
+          {successMessage}
+        </div>
+      {/if}
+    </div>
+  {/if}
+
   <h2 class="text-2xl font-bold text-gray-800 mb-6">
     {t.config_title}
   </h2>
@@ -200,31 +297,134 @@
     </div>
 
     <div>
-      <label
-        for="github-enterprise-url"
-        class="block text-sm font-semibold text-gray-700 mb-2"
-      >
-        {t.github_enterprise_url_label}
-      </label>
+      <div class="flex items-center mb-4">
+        <input
+          type="checkbox"
+          id="use-enterprise"
+          bind:checked={useEnterprise}
+          class="h-4 w-4 text-blue-600 focus:ring-blue-500 border-gray-300 rounded"
+        />
+        <label
+          for="use-enterprise"
+          class="ml-2 block text-sm font-semibold text-gray-700"
+        >
+          {t.use_enterprise}
+        </label>
+      </div>
+
+      {#if useEnterprise}
+        <div>
+          <label
+            for="github-enterprise-url"
+            class="block text-sm font-semibold text-gray-700 mb-2"
+          >
+            {t.github_enterprise_url_label}
+          </label>
+          <input
+            type="text"
+            id="github-enterprise-url"
+            bind:value={enterpriseUrl}
+            placeholder="https://github.company.com"
+            class="w-full px-4 py-3 border-2 border-gray-200 rounded-lg text-base transition-colors focus:outline-none focus:border-primary-500 focus:ring-4 focus:ring-primary-100"
+          />
+          <small class="text-gray-500 text-sm mt-1">
+            {t.github_enterprise_url_help}
+          </small>
+        </div>
+      {/if}
+    </div>
+
+    <div class="flex items-center">
       <input
-        type="text"
-        id="github-enterprise-url"
-        bind:value={enterpriseUrl}
-        placeholder="https://github.company.com"
-        class="w-full px-4 py-3 border-2 border-gray-200 rounded-lg text-base transition-colors focus:outline-none focus:border-primary-500 focus:ring-4 focus:ring-primary-100"
+        type="checkbox"
+        id="requires-vpn"
+        bind:checked={requiresVpn}
+        class="h-4 w-4 text-blue-600 focus:ring-blue-500 border-gray-300 rounded"
       />
-      <small class="text-gray-500 text-sm mt-1">
-        {t.github_enterprise_url_help}
-      </small>
+      <label
+        for="requires-vpn"
+        class="ml-2 block text-sm font-semibold text-gray-700"
+      >
+        {t.requires_vpn}
+      </label>
+    </div>
+
+    <div class="border-t pt-6">
+      <h3 class="text-lg font-semibold text-gray-800 mb-4">{t.demo_mode}</h3>
+      <p class="text-sm text-gray-600 mb-4">
+        Tryb demo pozwala na testowanie aplikacji z przykładowymi danymi bez
+        konieczności konfiguracji GitHub API.
+      </p>
+      <button
+        on:click={toggleDemoMode}
+        class="w-full bg-purple-600 text-white px-6 py-3 rounded-lg text-base font-semibold cursor-pointer transition-all duration-300 hover:bg-purple-700"
+      >
+        {isDemoMode() ? t.disable_demo : t.enable_demo}
+      </button>
     </div>
 
     <button
       on:click={saveConfig}
-      class="w-full bg-blue-600 text-white px-6 py-3 rounded-lg text-base font-semibold cursor-pointer transition-all duration-300 hover:bg-blue-700"
+      disabled={isSaving || isLoading}
+      class="w-full bg-blue-600 text-white px-6 py-3 rounded-lg text-base font-semibold cursor-pointer transition-all duration-300 hover:bg-blue-700 disabled:opacity-50 disabled:cursor-not-allowed"
     >
-      {t.save_config}
+      {#if isSaving}
+        <span class="flex items-center justify-center">
+          <svg
+            class="animate-spin -ml-1 mr-3 h-5 w-5 text-white"
+            xmlns="http://www.w3.org/2000/svg"
+            fill="none"
+            viewBox="0 0 24 24"
+          >
+            <circle
+              class="opacity-25"
+              cx="12"
+              cy="12"
+              r="10"
+              stroke="currentColor"
+              stroke-width="4"
+            ></circle>
+            <path
+              class="opacity-75"
+              fill="currentColor"
+              d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"
+            ></path>
+          </svg>
+          Zapisywanie...
+        </span>
+      {:else}
+        {t.save_config}
+      {/if}
     </button>
   </div>
 </div>
+
+{#if isLoading}
+  <div class="bg-white rounded-2xl p-8 mb-6 shadow-2xl">
+    <div class="flex items-center justify-center">
+      <svg
+        class="animate-spin h-8 w-8 text-blue-600"
+        xmlns="http://www.w3.org/2000/svg"
+        fill="none"
+        viewBox="0 0 24 24"
+      >
+        <circle
+          class="opacity-25"
+          cx="12"
+          cy="12"
+          r="10"
+          stroke="currentColor"
+          stroke-width="4"
+        ></circle>
+        <path
+          class="opacity-75"
+          fill="currentColor"
+          d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"
+        ></path>
+      </svg>
+      <span class="ml-3 text-gray-600">Ładowanie ustawień...</span>
+    </div>
+  </div>
+{/if}
 
 <ConnectionLostModal bind:isOpen={$auth.showConnectionLostModal} />

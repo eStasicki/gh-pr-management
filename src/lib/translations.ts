@@ -92,6 +92,11 @@ export const translations: Translations = {
     dashboard_nav: "Dashboard",
     settings_nav: "Ustawienia",
     sign_out: "Wyloguj się",
+    use_enterprise: "Użyj GitHub Enterprise",
+    requires_vpn: "Wymaga połączenia z VPN",
+    demo_mode: "Tryb demo",
+    enable_demo: "Włącz tryb demo",
+    disable_demo: "Wyłącz tryb demo",
   },
   en: {
     config_title: "Configuration",
@@ -184,5 +189,10 @@ export const translations: Translations = {
     dashboard_nav: "Dashboard",
     settings_nav: "Settings",
     sign_out: "Sign out",
+    use_enterprise: "Use GitHub Enterprise",
+    requires_vpn: "Requires VPN connection",
+    demo_mode: "Demo mode",
+    enable_demo: "Enable demo mode",
+    disable_demo: "Disable demo mode",
   },
 };
