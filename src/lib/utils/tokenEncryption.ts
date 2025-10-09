@@ -104,7 +104,6 @@ export async function encryptSensitiveData(
 
     return `encrypted:${encryptedToken.iv}:${encryptedToken.salt}:${encryptedToken.data}`;
   } catch (error) {
-    console.error("Failed to encrypt sensitive data:", error);
     throw new Error("Data encryption failed");
   }
 }
@@ -146,7 +145,6 @@ export async function decryptSensitiveData(
 
     return new TextDecoder().decode(decryptedData);
   } catch (error) {
-    console.error("Failed to decrypt sensitive data:", error);
     throw new Error("Data decryption failed");
   }
 }
@@ -185,7 +183,6 @@ export async function encryptGitHubToken(
 
     return `encrypted:${encryptedToken.iv}:${encryptedToken.salt}:${encryptedToken.data}`;
   } catch (error) {
-    console.error("Failed to encrypt GitHub token:", error);
     throw new Error("Token encryption failed");
   }
 }
@@ -227,7 +224,6 @@ export async function decryptGitHubToken(
 
     return new TextDecoder().decode(decryptedData);
   } catch (error) {
-    console.error("Failed to decrypt GitHub token:", error);
     throw new Error("Token decryption failed");
   }
 }
@@ -247,7 +243,6 @@ export async function migrateTokenIfNeeded(
   try {
     return await encryptGitHubToken(token, userId);
   } catch (error) {
-    console.error("Failed to migrate token:", error);
     return token;
   }
 }

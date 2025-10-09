@@ -17,10 +17,8 @@ const getStoredSelectedPRs = (): number[] => {
     try {
       const stored = localStorage.getItem("selectedPRs");
       const parsed = stored ? JSON.parse(stored) : [];
-      console.log("📦 Loaded selected PRs from localStorage:", parsed);
       return parsed;
     } catch (error) {
-      console.error("Error loading selected PRs from localStorage:", error);
       return [];
     }
   }
@@ -34,10 +32,7 @@ if (browser) {
   selectedPRs.subscribe((value) => {
     try {
       localStorage.setItem("selectedPRs", JSON.stringify(value));
-      console.log("💾 Saved selected PRs to localStorage:", value);
-    } catch (error) {
-      console.error("Error saving selected PRs to localStorage:", error);
-    }
+    } catch (error) {}
   });
 }
 

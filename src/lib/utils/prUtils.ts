@@ -17,9 +17,6 @@ export function createPRSelectionHandlers(selectedPRsValue: number[]) {
     onSelectionChange: (selected: number[]) => void
   ): void {
     if (allUserPRs.length === 0) {
-      console.log(
-        "🔍 validateSelectedPRs: allUserPRs is empty, skipping validation"
-      );
       return;
     }
 
@@ -28,18 +25,7 @@ export function createPRSelectionHandlers(selectedPRsValue: number[]) {
       allSearchPRNumbers.includes(prNumber)
     );
 
-    console.log("🔍 validateSelectedPRs:", {
-      allSearchPRNumbers: allSearchPRNumbers.length,
-      selectedPRsValue: selectedPRsValue.length,
-      validSelectedPRs: validSelectedPRs.length,
-      willUpdate: validSelectedPRs.length !== selectedPRsValue.length,
-    });
-
     if (validSelectedPRs.length !== selectedPRsValue.length) {
-      console.log("⚠️ validateSelectedPRs: Removing invalid selections:", {
-        before: selectedPRsValue,
-        after: validSelectedPRs,
-      });
       onSelectionChange(validSelectedPRs);
     }
   }

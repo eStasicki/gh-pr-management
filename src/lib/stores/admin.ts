@@ -45,8 +45,6 @@ export async function checkAdminStatus(force = false): Promise<boolean> {
 
     return isAdminStatus;
   } catch (error) {
-    console.error("Error checking admin status:", error);
-
     admin.update((state) => ({
       ...state,
       isAdmin: false,

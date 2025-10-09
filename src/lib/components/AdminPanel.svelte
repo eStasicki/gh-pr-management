@@ -31,7 +31,6 @@
     try {
       usersWithRoles = await adminService.getUsersWithRoles();
     } catch (error) {
-      console.error("Error loading users:", error);
       errorMessage = "Błąd podczas ładowania użytkowników";
     } finally {
       isLoading = false;
@@ -54,7 +53,6 @@
         successMessage = "";
       }, 3000);
     } catch (error) {
-      console.error("Error changing user role:", error);
       errorMessage = "Błąd podczas zmiany roli użytkownika";
     }
   }

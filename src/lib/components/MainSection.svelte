@@ -36,18 +36,14 @@
 
   $: prSelectionHandlers = createPRSelectionHandlers($selectedPRs);
 
-  // Reaktywność na zmiany trybu demo
   $: if (isDemoMode() && allUserPRs.length === 0) {
-    console.log("🎭 Demo mode enabled, loading demo data");
     getAllUserPRs($config, $currentUser, $searchTerm).then((prs) => {
       allUserPRs = prs;
     });
   }
 
   onMount(() => {
-    // Sprawdź czy tryb demo jest już włączony
     if (isDemoMode()) {
-      console.log("🎭 Demo mode already enabled, skipping initial load");
       return;
     }
 
@@ -81,16 +77,7 @@
   }
 
   $: if (allUserPRs.length > 0) {
-    console.log("🔄 MainSection: allUserPRs loaded, validating selections:", {
-      allUserPRsCount: allUserPRs.length,
-      selectedPRsCount: $selectedPRs.length,
-      selectedPRs: $selectedPRs,
-    });
     prSelectionHandlers.validateSelectedPRs(allUserPRs, (selected) => {
-      console.log("🔄 MainSection: validateSelectedPRs callback called:", {
-        before: $selectedPRs,
-        after: selected,
-      });
       selectedPRs.set(selected);
     });
   }

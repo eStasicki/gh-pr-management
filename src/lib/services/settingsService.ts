@@ -34,7 +34,6 @@ export const settingsService = {
       .single();
 
     if (error && error.code !== "PGRST116") {
-      console.error("Error fetching settings:", error);
       throw error;
     }
 
@@ -100,7 +99,6 @@ export const settingsService = {
         enterprise_url: decryptedEnterpriseUrl,
       };
     } catch (error) {
-      console.error("Error decrypting sensitive data:", error);
       return {
         ...data,
         github_token: "",
@@ -170,7 +168,6 @@ export const settingsService = {
           .single();
 
         if (error) {
-          console.error("Error updating settings:", error);
           throw error;
         }
         return {
@@ -197,7 +194,6 @@ export const settingsService = {
           .single();
 
         if (error) {
-          console.error("Error creating settings:", error);
           throw error;
         }
         return {
@@ -209,7 +205,6 @@ export const settingsService = {
         };
       }
     } catch (error) {
-      console.error("Error encrypting token:", error);
       throw new Error("Failed to save settings due to encryption error");
     }
   },
@@ -226,7 +221,6 @@ export const settingsService = {
       .eq("user_id", user.id);
 
     if (error) {
-      console.error("Error deleting settings:", error);
       throw error;
     }
   },

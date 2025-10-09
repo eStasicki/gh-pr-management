@@ -19,9 +19,7 @@ function loadConfig(): GitHubConfig {
     if (stored) {
       try {
         return JSON.parse(stored);
-      } catch (e) {
-        console.error("Failed to parse stored config:", e);
-      }
+      } catch (e) {}
     }
   }
 
@@ -43,9 +41,7 @@ export const loadConfigFromSupabase = async (): Promise<GitHubConfig> => {
         demoMode: settings.demo_mode || false,
       };
     }
-  } catch (error) {
-    console.error("Failed to load settings from Supabase:", error);
-  }
+  } catch (error) {}
 
   return loadConfig();
 };
@@ -63,7 +59,6 @@ export const saveConfigToSupabase = async (
       demo_mode: config.demoMode,
     });
   } catch (error) {
-    console.error("Failed to save settings to Supabase:", error);
     throw error;
   }
 };
@@ -72,33 +67,25 @@ if (browser) {
   // Load config from Supabase first, then localStorage as fallback
   loadConfigFromSupabase().then((supabaseConfig) => {
     if (supabaseConfig.token) {
-      console.log("Loaded config from Supabase:", supabaseConfig);
       config.set(supabaseConfig);
 
-      // Jeśli demo_mode jest włączone w Supabase, automatycznie włącz tryb demo
       if (supabaseConfig.demoMode) {
-        console.log("🎭 Auto-enabling demo mode from Supabase settings");
         import("$lib/utils/demoMode").then(({ enableDemoMode }) => {
-          // Opóźnij włączenie trybu demo, żeby MainSection zdążył się załadować
           setTimeout(() => {
             enableDemoMode();
           }, 100);
         });
       }
     } else {
-      // Fallback to localStorage
       const stored = localStorage.getItem("gh_config");
       if (stored) {
         try {
           const storedConfig = JSON.parse(stored);
-          console.log("Loaded config from localStorage:", storedConfig);
           config.set(storedConfig);
         } catch (e) {
-          console.error("Failed to parse stored config:", e);
           config.set(defaultConfig);
         }
       } else {
-        console.log("No stored config found, using defaults");
         config.set(defaultConfig);
       }
     }
@@ -115,25 +102,17 @@ if (browser) {
   config.subscribe((value) => {
     const currentRepo = `${value.owner}/${value.repo}`;
 
-    // Skip the first load to avoid clearing selections on page refresh
     if (isInitialLoad) {
       previousRepo = currentRepo;
       isInitialLoad = false;
-      console.log(
-        "🔧 Initial config load, setting previousRepo to:",
-        currentRepo
-      );
       return;
     }
 
     if (previousRepo && previousRepo !== currentRepo && currentRepo !== "/") {
-      // Repository changed, clear selected PRs
       localStorage.removeItem("selectedPRs");
-      // Also reset the store to keep consistency
       import("./prs").then(({ selectedPRs }) => {
         selectedPRs.set([]);
       });
-      console.log("Repository changed, cleared selected PRs");
     }
     previousRepo = currentRepo;
   });

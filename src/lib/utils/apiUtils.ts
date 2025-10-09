@@ -19,7 +19,6 @@ let mockPRsGenerated = false;
 export function resetMockCache() {
   mockPRsCache = [];
   mockPRsGenerated = false;
-  console.log("🎭 Reset mock PRs cache");
 }
 
 export function getApiBaseUrl(configValue: any): string {
@@ -48,9 +47,7 @@ export async function loadUser(configValue: any): Promise<void> {
       const user = await response.json();
       currentUser.set(user);
     }
-  } catch (error) {
-    console.error("Error loading user:", error);
-  }
+  } catch (error) {}
 }
 
 export async function loadPRs(
@@ -67,36 +64,28 @@ export async function loadPRs(
     if (!mockPRsGenerated) {
       mockPRsCache = generateMockPRs(50);
       mockPRsGenerated = true;
-      console.log("🎭 Generated 50 mock PRs for demo mode");
     }
 
-    const perPage = 20; // Przywrócone do 20 dla paginacji
+    const perPage = 20;
     const startIndex = (page - 1) * perPage;
     const endIndex = Math.min(startIndex + perPage, mockPRsCache.length);
     const pagePRs = mockPRsCache.slice(startIndex, endIndex);
 
-    // Symuluj realistyczne opóźnienie API (500-1000ms)
-    const delay = Math.random() * 500 + 500; // 500-1000ms
-    console.log(`🎭 Simulating API delay: ${Math.round(delay)}ms`);
+    const delay = Math.random() * 500 + 500;
     await new Promise((resolve) => setTimeout(resolve, delay));
 
     prs.set(pagePRs);
     isLoading.set(false);
 
-    // Ustaw paginację
     const totalPagesCount = Math.ceil(mockPRsCache.length / perPage);
     currentPage.set(page);
     totalPages.set(totalPagesCount);
     totalPRs.set(mockPRsCache.length);
 
-    console.log(
-      `🎭 Loaded page ${page}/${totalPagesCount} with ${pagePRs.length} PRs (total: ${mockPRsCache.length})`
-    );
     return;
   }
 
   if (!currentUserValue?.login) {
-    console.error("No current user available");
     return;
   }
 
@@ -160,7 +149,6 @@ export async function loadPRs(
     totalPages.set(totalPagesCount);
     totalPRs.set(totalCount);
   } catch (error) {
-    console.error("Error loading PRs:", error);
     isLoading.set(false);
   }
 }
@@ -171,17 +159,14 @@ export async function getAllUserPRs(
   searchTermValue: string
 ): Promise<any[]> {
   if (isDemoMode()) {
-    // W trybie demo zwróć wszystkie mock PR z cache
     if (!mockPRsGenerated) {
       mockPRsCache = generateMockPRs(50);
       mockPRsGenerated = true;
-      console.log("🎭 Generated 50 mock PRs for getAllUserPRs");
     }
     return mockPRsCache;
   }
 
   if (!currentUserValue?.login) {
-    console.error("No current user available");
     return [];
   }
 
@@ -248,7 +233,6 @@ export async function getAllUserPRs(
 
     return allPRs;
   } catch (error) {
-    console.error("Error loading all user PRs:", error);
     return [];
   }
 }

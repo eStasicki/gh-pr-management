@@ -257,17 +257,11 @@ class GitHubAPI {
   async getBranches(): Promise<string[]> {
     const currentConfig = get(config);
 
-    // Skip API calls in demo mode
     if (isDemoMode()) {
-      console.log("🎭 Demo mode: returning mock branches");
       return ["main", "develop", "feature/demo", "hotfix/demo"];
     }
 
-    // Validate configuration before making API calls
     if (!currentConfig.owner || !currentConfig.repo || !currentConfig.token) {
-      console.warn(
-        "GitHub configuration is incomplete, returning empty branches list"
-      );
       return [];
     }
 
@@ -304,9 +298,7 @@ class GitHubAPI {
   async getLabels(): Promise<Array<{ name: string; color: string }>> {
     const currentConfig = get(config);
 
-    // Skip API calls in demo mode
     if (isDemoMode()) {
-      console.log("🎭 Demo mode: returning mock labels");
       return [
         { name: "bug", color: "d73a4a" },
         { name: "enhancement", color: "a2eeef" },
@@ -321,11 +313,7 @@ class GitHubAPI {
       ];
     }
 
-    // Validate configuration before making API calls
     if (!currentConfig.owner || !currentConfig.repo || !currentConfig.token) {
-      console.warn(
-        "GitHub configuration is incomplete, returning empty labels list"
-      );
       return [];
     }
 

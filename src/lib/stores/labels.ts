@@ -21,7 +21,6 @@ export async function loadLabels() {
     const errorMessage =
       error instanceof Error ? error.message : "Failed to load labels";
     labelsError.set(errorMessage);
-    console.error("Error loading labels:", error);
   } finally {
     isLoadingLabels.set(false);
   }

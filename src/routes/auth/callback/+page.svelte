@@ -9,7 +9,6 @@
       const { data, error } = await supabase.auth.getSession();
 
       if (error) {
-        console.error("Auth callback error:", error);
         goto("/login?error=auth_callback_error");
         return;
       }
@@ -20,7 +19,6 @@
         goto("/login");
       }
     } catch (error) {
-      console.error("Unexpected error:", error);
       goto("/login?error=unexpected_error");
     }
   });

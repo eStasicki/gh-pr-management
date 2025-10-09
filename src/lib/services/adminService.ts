@@ -15,18 +15,15 @@ export const adminService = {
       const { data, error } = await supabase.rpc("is_admin");
 
       if (error) {
-        console.error("Error checking admin status:", error);
         return false;
       }
 
       return data === true;
     } catch (error) {
-      console.error("Error checking admin status:", error);
       return false;
     }
   },
 
-  // Sprawdź czy konkretny użytkownik jest administratorem
   async isUserAdmin(userId: string): Promise<boolean> {
     try {
       const { data, error } = await supabase.rpc("is_admin", {
@@ -34,13 +31,11 @@ export const adminService = {
       });
 
       if (error) {
-        console.error("Error checking admin status:", error);
         return false;
       }
 
       return data === true;
     } catch (error) {
-      console.error("Error checking admin status:", error);
       return false;
     }
   },
@@ -54,13 +49,11 @@ export const adminService = {
         .order("created_at", { ascending: false });
 
       if (error) {
-        console.error("Error fetching user roles:", error);
         throw error;
       }
 
       return data || [];
     } catch (error) {
-      console.error("Error fetching user roles:", error);
       throw error;
     }
   },
@@ -75,11 +68,9 @@ export const adminService = {
       });
 
       if (error) {
-        console.error("Error setting user role:", error);
         throw error;
       }
     } catch (error) {
-      console.error("Error setting user role:", error);
       throw error;
     }
   },
@@ -93,11 +84,9 @@ export const adminService = {
         .eq("user_id", userId);
 
       if (error) {
-        console.error("Error removing user role:", error);
         throw error;
       }
     } catch (error) {
-      console.error("Error removing user role:", error);
       throw error;
     }
   },
@@ -118,7 +107,6 @@ export const adminService = {
       );
 
       if (error) {
-        console.error("Error fetching users with roles:", error);
         throw error;
       }
 
@@ -131,7 +119,6 @@ export const adminService = {
         })) || []
       );
     } catch (error) {
-      console.error("Error fetching users with roles:", error);
       throw error;
     }
   },

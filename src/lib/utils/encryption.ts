@@ -38,7 +38,6 @@ function simpleDecrypt(encryptedText: string, key: string): string {
     }
     return result;
   } catch (error) {
-    console.error("Failed to decrypt token:", error);
     return "";
   }
 }

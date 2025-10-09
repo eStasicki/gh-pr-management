@@ -86,8 +86,6 @@
         };
       });
     } catch (error) {
-      console.error("Failed to fetch labels:", error);
-      // Fallback to default colors
       return labelNames.map((name) => ({
         id: Math.random(),
         name: name,

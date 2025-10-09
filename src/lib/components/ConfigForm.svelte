@@ -73,9 +73,7 @@
           isLoading = false;
         })
         .catch((error) => {
-          console.error("Error loading config:", error);
           errorMessage = "Błąd podczas ładowania ustawień";
-          // Fallback do lokalnego store
           const currentConfig = get(config);
           token = currentConfig.token || "";
           owner = currentConfig.owner || "";
@@ -146,7 +144,6 @@
 
       successMessage = "Ustawienia zostały zapisane pomyślnie!";
     } catch (error) {
-      console.error("Error saving settings:", error);
       errorMessage = "Błąd podczas zapisywania ustawień. Spróbuj ponownie.";
     } finally {
       isSaving = false;
@@ -168,7 +165,6 @@
         successMessage = "";
       }, 3000);
     } catch (error) {
-      console.error("Error toggling demo mode:", error);
       errorMessage = "Błąd podczas zmiany trybu demo";
     }
   }
