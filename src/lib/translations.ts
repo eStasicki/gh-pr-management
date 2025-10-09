@@ -89,6 +89,9 @@ export const translations: Translations = {
     common_labels: "Wspólne labele",
     operation_results: "Wyniki operacji",
     close: "Zamknij",
+    dashboard_nav: "Dashboard",
+    settings_nav: "Ustawienia",
+    sign_out: "Wyloguj się",
   },
   en: {
     config_title: "Configuration",
@@ -178,5 +181,8 @@ export const translations: Translations = {
     common_labels: "Common labels",
     operation_results: "Operation results",
     close: "Close",
+    dashboard_nav: "Dashboard",
+    settings_nav: "Settings",
+    sign_out: "Sign out",
   },
 };
