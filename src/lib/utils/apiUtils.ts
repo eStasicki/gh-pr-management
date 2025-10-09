@@ -10,6 +10,17 @@ import {
 } from "$lib/stores";
 import { isDemoMode } from "$lib/utils/demoMode";
 import { generateMockPRs, mockCurrentUser } from "$lib/mockData";
+import { get } from "svelte/store";
+
+// Cache dla mock danych w trybie demo
+let mockPRsCache: any[] = [];
+let mockPRsGenerated = false;
+
+export function resetMockCache() {
+  mockPRsCache = [];
+  mockPRsGenerated = false;
+  console.log("🎭 Reset mock PRs cache");
+}
 
 export function getApiBaseUrl(configValue: any): string {
   if (configValue.enterpriseUrl) {
@@ -43,29 +54,44 @@ export async function loadUser(configValue: any): Promise<void> {
 }
 
 export async function loadPRs(
-  page: number = 1,
   configValue: any,
   currentUserValue: any,
-  searchTermValue: string
+  searchTermValue: string,
+  page: number = 1
 ): Promise<void> {
   if (isDemoMode()) {
-    // W trybie demo użyj mock danych
+    // W trybie demo użyj mock danych z cache
     isLoading.set(true);
 
-    // Symuluj opóźnienie API
-    await new Promise((resolve) => setTimeout(resolve, 300));
+    // Generuj mock PR-y tylko raz
+    if (!mockPRsGenerated) {
+      mockPRsCache = generateMockPRs(50);
+      mockPRsGenerated = true;
+      console.log("🎭 Generated 50 mock PRs for demo mode");
+    }
 
-    const allMockPRs = generateMockPRs(50);
-    const perPage = 20;
+    const perPage = 20; // Przywrócone do 20 dla paginacji
     const startIndex = (page - 1) * perPage;
-    const endIndex = startIndex + perPage;
-    const pagePRs = allMockPRs.slice(startIndex, endIndex);
+    const endIndex = Math.min(startIndex + perPage, mockPRsCache.length);
+    const pagePRs = mockPRsCache.slice(startIndex, endIndex);
+
+    // Symuluj realistyczne opóźnienie API (500-1000ms)
+    const delay = Math.random() * 500 + 500; // 500-1000ms
+    console.log(`🎭 Simulating API delay: ${Math.round(delay)}ms`);
+    await new Promise((resolve) => setTimeout(resolve, delay));
 
     prs.set(pagePRs);
-    currentPage.set(page);
-    totalPages.set(Math.ceil(allMockPRs.length / perPage));
-    totalPRs.set(allMockPRs.length);
     isLoading.set(false);
+
+    // Ustaw paginację
+    const totalPagesCount = Math.ceil(mockPRsCache.length / perPage);
+    currentPage.set(page);
+    totalPages.set(totalPagesCount);
+    totalPRs.set(mockPRsCache.length);
+
+    console.log(
+      `🎭 Loaded page ${page}/${totalPagesCount} with ${pagePRs.length} PRs (total: ${mockPRsCache.length})`
+    );
     return;
   }
 
@@ -125,15 +151,16 @@ export async function loadPRs(
 
     const validPRs = prsData.filter((pr) => pr !== null);
     prs.set(validPRs);
-    currentPage.set(page);
+    isLoading.set(false);
 
     const totalCount = searchResult.total_count || 0;
     const totalPagesCount = Math.ceil(totalCount / perPage);
+
+    currentPage.set(page);
     totalPages.set(totalPagesCount);
     totalPRs.set(totalCount);
   } catch (error) {
     console.error("Error loading PRs:", error);
-  } finally {
     isLoading.set(false);
   }
 }
@@ -144,8 +171,13 @@ export async function getAllUserPRs(
   searchTermValue: string
 ): Promise<any[]> {
   if (isDemoMode()) {
-    // W trybie demo zwróć wszystkie mock PR
-    return generateMockPRs(50);
+    // W trybie demo zwróć wszystkie mock PR z cache
+    if (!mockPRsGenerated) {
+      mockPRsCache = generateMockPRs(50);
+      mockPRsGenerated = true;
+      console.log("🎭 Generated 50 mock PRs for getAllUserPRs");
+    }
+    return mockPRsCache;
   }
 
   if (!currentUserValue?.login) {

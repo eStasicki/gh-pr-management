@@ -40,6 +40,7 @@ export const loadConfigFromSupabase = async (): Promise<GitHubConfig> => {
         repo: settings.repo_name,
         enterpriseUrl: settings.enterprise_url || "",
         requiresVpn: settings.requires_vpn || false,
+        demoMode: settings.demo_mode || false,
       };
     }
   } catch (error) {
@@ -59,6 +60,7 @@ export const saveConfigToSupabase = async (
       repo_name: config.repo,
       enterprise_url: config.enterpriseUrl,
       requires_vpn: config.requiresVpn,
+      demo_mode: config.demoMode,
     });
   } catch (error) {
     console.error("Failed to save settings to Supabase:", error);
@@ -72,6 +74,17 @@ if (browser) {
     if (supabaseConfig.token) {
       console.log("Loaded config from Supabase:", supabaseConfig);
       config.set(supabaseConfig);
+
+      // Jeśli demo_mode jest włączone w Supabase, automatycznie włącz tryb demo
+      if (supabaseConfig.demoMode) {
+        console.log("🎭 Auto-enabling demo mode from Supabase settings");
+        import("$lib/utils/demoMode").then(({ enableDemoMode }) => {
+          // Opóźnij włączenie trybu demo, żeby MainSection zdążył się załadować
+          setTimeout(() => {
+            enableDemoMode();
+          }, 100);
+        });
+      }
     } else {
       // Fallback to localStorage
       const stored = localStorage.getItem("gh_config");

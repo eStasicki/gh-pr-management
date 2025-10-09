@@ -1,5 +1,4 @@
 <script lang="ts">
-  import { onMount } from "svelte";
   import {
     prs,
     currentUser,
@@ -36,17 +35,11 @@
   // Create a reactive map of selected PRs for better performance
   $: selectedPRsMap = new Set($selectedPRs);
 
-  // Reactive function for checking if PR is selected
-  function isPRSelected(prNumber: number): boolean {
-    return selectedPRsMap.has(prNumber);
-  }
-
   // Generate skeleton loading items
   function generateSkeletonItems(count: number = 5) {
     return Array.from({ length: count }, (_, i) => i);
   }
 
-  export let onLoadPRs: (page: number) => void;
   export let onGetAllUserPRs: () => Promise<any[]>;
 
   export async function toggleAllPRs() {
@@ -58,212 +51,231 @@
       selectedPRs.set([]);
     } else {
       // Select all user's PRs
-      const allUserPRs = await getAllUserPRs();
+      const allUserPRs = await onGetAllUserPRs();
       const allPRNumbers = allUserPRs.map((pr) => pr.number);
       selectedPRs.set(allPRNumbers);
     }
   }
 
   async function checkIfAllUserPRsSelected(): Promise<boolean> {
-    const allUserPRs = await getAllUserPRs();
+    const allUserPRs = await onGetAllUserPRs();
     const allPRNumbers = allUserPRs.map((pr) => pr.number);
-    return (
-      allPRNumbers.length > 0 &&
-      allPRNumbers.every((num) => $selectedPRs.includes(num))
-    );
+    return allPRNumbers.every((num) => $selectedPRs.includes(num));
   }
 
-  async function getAllUserPRs(): Promise<any[]> {
-    if (onGetAllUserPRs) {
-      return await onGetAllUserPRs();
-    }
-    return [];
-  }
-
+  // Pagination functions
   function goToPage(page: number) {
     if (page >= 1 && page <= $totalPages) {
-      loadPRsForPage(page);
+      // Emit event to parent to load new page
+      const event = new CustomEvent("pageChange", { detail: { page } });
+      window.dispatchEvent(event);
     }
   }
 
-  function nextPage() {
-    if ($currentPage < $totalPages) {
-      loadPRsForPage($currentPage + 1);
-    }
-  }
-
-  function prevPage() {
+  function goToPreviousPage() {
     if ($currentPage > 1) {
-      loadPRsForPage($currentPage - 1);
+      goToPage($currentPage - 1);
     }
   }
 
-  async function loadPRsForPage(page: number) {
-    if (onLoadPRs) {
-      onLoadPRs(page);
+  function goToNextPage() {
+    if ($currentPage < $totalPages) {
+      goToPage($currentPage + 1);
     }
   }
 </script>
 
-<div class="grid gap-4">
+<div class="space-y-4">
   {#if $isLoading}
-    <div class="flex justify-center items-center py-12">
-      <div class="text-center">
-        <div
-          class="animate-spin rounded-full h-12 w-12 border-b-2 border-primary-500 mx-auto mb-4"
-        ></div>
-        <p class="text-gray-600 font-medium">{t.loading}</p>
-      </div>
-    </div>
-  {:else if $auth.showConnectionLostModal}
-    {#each generateSkeletonItems() as skeletonItem}
-      <div
-        role="status"
-        class="rounded-xl p-5 border-2 border-gray-200 bg-gray-50 animate-pulse"
-      >
-        <div class="flex justify-between items-start mb-3">
-          <div class="flex items-start gap-3 flex-1">
-            <div class="h-6 bg-gray-200 rounded w-3/4"></div>
-          </div>
-          <div class="h-6 bg-gray-200 rounded w-12 flex-shrink-0"></div>
-        </div>
-
-        <div class="flex flex-col lg:items-center lg:flex-row gap-2 mb-3">
-          <div class="h-4 bg-gray-200 rounded w-20"></div>
-          <div class="h-4 bg-gray-200 rounded w-32"></div>
-          <div class="h-4 bg-gray-200 rounded w-16"></div>
-          <div class="h-4 bg-gray-200 rounded w-40"></div>
-        </div>
-
-        <div class="flex flex-wrap gap-2">
-          <div class="h-6 bg-gray-200 rounded w-16"></div>
-          <div class="h-6 bg-gray-200 rounded w-20"></div>
-          <div class="h-6 bg-gray-200 rounded w-12"></div>
-        </div>
-        <span class="sr-only">Loading...</span>
-      </div>
-    {/each}
-  {:else if filteredPRs.length === 0}
-    <div class="text-center py-12">
-      <p class="text-gray-500 text-lg">{t.no_prs_found}</p>
-    </div>
-  {:else}
-    {#each filteredPRs as pr (pr.number)}
-      <div
-        on:click={() => togglePRSelection(pr.number)}
-        role="checkbox"
-        tabindex="0"
-        aria-checked={$selectedPRs.includes(pr.number)}
-        aria-label="Select PR #{pr.number}: {pr.title}"
-        on:keydown={(e) => {
-          if (e.key === "Enter" || e.key === " ") {
-            e.preventDefault();
-            togglePRSelection(pr.number);
-          }
-        }}
-        class="rounded-xl p-5 transition-all duration-300 cursor-pointer hover:border-primary-500 hover:-translate-y-0.5 hover:shadow-lg border-2 select-none focus:outline-none {$selectedPRs.includes(
-          pr.number
-        )
-          ? 'bg-gray-200 border-primary-500'
-          : 'bg-gray-50 border-gray-200 hover:bg-gray-100'}"
-      >
-        <div class="flex justify-between items-start mb-3">
-          <div class="flex items-start gap-3 flex-1">
-            <div class="font-semibold text-gray-800 text-lg pr-4 flex-1">
-              {pr.title}
+    <div class="space-y-3">
+      {#each generateSkeletonItems(5) as _}
+        <div class="bg-gray-100 rounded-lg p-4 animate-pulse">
+          <div class="flex items-center space-x-3">
+            <div class="w-4 h-4 bg-gray-200 rounded"></div>
+            <div class="flex-1 space-y-2">
+              <div class="h-4 bg-gray-200 rounded w-3/4"></div>
+              <div class="h-3 bg-gray-200 rounded w-1/2"></div>
             </div>
           </div>
-          <a
-            href={pr.html_url}
-            target="_blank"
-            class="bg-primary-500 text-white px-2 py-1 rounded-md text-xs font-semibold flex-shrink-0 bg-blue-500 hover:bg-blue-600 transition-all duration-300"
-          >
-            #{pr.number}
-          </a>
         </div>
-
+      {/each}
+    </div>
+  {:else if filteredPRs.length === 0}
+    <div class="text-center py-8 text-gray-500">
+      <svg
+        class="mx-auto h-12 w-12 text-gray-400"
+        fill="none"
+        stroke="currentColor"
+        viewBox="0 0 24 24"
+      >
+        <path
+          stroke-linecap="round"
+          stroke-linejoin="round"
+          stroke-width="2"
+          d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"
+        ></path>
+      </svg>
+      <p class="mt-2 text-sm">{t.no_prs_found}</p>
+    </div>
+  {:else}
+    <div class="space-y-3">
+      {#each filteredPRs as pr (pr.number)}
         <div
-          class="flex flex-col lg:items-center lg:flex-row gap-2 mb-3 text-sm text-gray-500"
+          class="bg-white border border-gray-200 rounded-lg p-4 hover:shadow-md transition-shadow duration-200"
         >
-          <span>Base: {pr.base.ref}</span>
-          <span class="font-semibold text-primary-600">
-            {t.author}: {pr.user.login}
-          </span>
-          <span
-            class="px-2 py-1 rounded text-xs font-medium bg-green-100 text-green-800 max-lg:order-1 max-w-max border border-green-300"
-          >
-            {pr.state.toUpperCase()}
-          </span>
-          <span
-            >{t.last_updated}: {new Date(pr.updated_at).toLocaleDateString(
-              $language,
-              {
-                year: "numeric",
-                month: "2-digit",
-                day: "2-digit",
-                hour: "2-digit",
-                minute: "2-digit",
-              }
-            )}</span
-          >
+          <div class="flex items-center space-x-3">
+            <input
+              type="checkbox"
+              checked={selectedPRsMap.has(pr.number)}
+              on:change={() => togglePRSelection(pr.number)}
+              class="h-4 w-4 text-blue-600 focus:ring-blue-500 border-gray-300 rounded"
+            />
+            <div class="flex-1 min-w-0">
+              <div class="flex items-center justify-between">
+                <h3 class="text-sm font-medium text-gray-900 truncate">
+                  <a
+                    href={pr.html_url}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    class="hover:text-blue-600 transition-colors duration-200"
+                  >
+                    {pr.title}
+                  </a>
+                </h3>
+                <span class="ml-2 text-xs text-gray-500">#{pr.number}</span>
+              </div>
+              <div class="mt-1 flex items-center space-x-2">
+                <span class="text-xs text-gray-500">
+                  {t.author}: {pr.user.login}
+                </span>
+                <span class="text-xs text-gray-400">•</span>
+                <span class="text-xs text-gray-500">
+                  {t.base_branch}: {pr.base.ref}
+                </span>
+                <span class="text-xs text-gray-400">•</span>
+                <span class="text-xs text-gray-500">
+                  {new Date(pr.created_at).toLocaleDateString()}
+                </span>
+              </div>
+              {#if pr.labels && pr.labels.length > 0}
+                <div class="mt-2 flex flex-wrap gap-1">
+                  {#each pr.labels as label}
+                    <span
+                      class="inline-flex items-center px-2 py-1 rounded-full text-xs font-medium"
+                      style="background-color: #{label.color}20; color: #{label.color}"
+                    >
+                      {label.name}
+                    </span>
+                  {/each}
+                </div>
+              {/if}
+            </div>
+          </div>
         </div>
+      {/each}
+    </div>
 
-        <div class="flex flex-wrap gap-2">
-          {#each pr.labels as label}
-            <span
-              class="px-2 py-1 rounded-md text-xs font-medium text-white"
-              style="background-color: #{label.color}"
-            >
-              {label.name}
-            </span>
-          {/each}
-        </div>
-      </div>
-    {/each}
-
+    <!-- Pagination -->
     {#if $totalPages > 1}
-      <div class="flex justify-center items-center gap-4 mt-2 pt-2">
-        <button
-          on:click={prevPage}
-          disabled={$currentPage === 1}
-          class="px-4 py-2 border border-gray-300 rounded-md text-sm font-medium transition-colors disabled:opacity-50 disabled:cursor-not-allowed hover:bg-gray-50 cursor-pointer"
-        >
-          {t.previous || "Previous"}
-        </button>
-
-        <div class="flex gap-2">
-          {#each Array.from({ length: Math.min(5, $totalPages) }, (_, i) => {
-            const startPage = Math.max(1, Math.min($currentPage - 2, $totalPages - 4));
-            return startPage + i;
-          }) as page}
-            <button
-              on:click={() => goToPage(page)}
-              class="px-3 py-2 text-sm font-medium transition-colors cursor-pointer rounded-md {$currentPage ===
-              page
-                ? 'bg-blue-500 text-white'
-                : 'border border-gray-300 hover:bg-gray-50'}"
-            >
-              {page}
-            </button>
-          {/each}
+      <div
+        class="flex items-center justify-between border-t border-gray-200 bg-white px-4 py-3 sm:px-6 mt-6"
+      >
+        <div class="flex flex-1 justify-between sm:hidden">
+          <button
+            on:click={goToPreviousPage}
+            disabled={$currentPage <= 1}
+            class="relative inline-flex items-center rounded-md border border-gray-300 bg-white px-4 py-2 text-sm font-medium text-gray-700 hover:bg-gray-50 disabled:opacity-50 disabled:cursor-not-allowed"
+          >
+            {t.previous}
+          </button>
+          <button
+            on:click={goToNextPage}
+            disabled={$currentPage >= $totalPages}
+            class="relative ml-3 inline-flex items-center rounded-md border border-gray-300 bg-white px-4 py-2 text-sm font-medium text-gray-700 hover:bg-gray-50 disabled:opacity-50 disabled:cursor-not-allowed"
+          >
+            {t.next}
+          </button>
         </div>
-
-        <button
-          on:click={nextPage}
-          disabled={$currentPage === $totalPages}
-          class="px-4 py-2 border border-gray-300 rounded-md text-sm font-medium transition-colors disabled:opacity-50 disabled:cursor-not-allowed hover:bg-gray-50 cursor-pointer"
+        <div
+          class="hidden sm:flex sm:flex-1 sm:items-center sm:justify-between"
         >
-          {t.next || "Next"}
-        </button>
-      </div>
+          <div>
+            <p class="text-sm text-gray-700">
+              {t.showing}
+              <span class="font-medium">{($currentPage - 1) * 20 + 1}</span>
+              {t.to}
+              <span class="font-medium"
+                >{Math.min($currentPage * 20, $totalPRs)}</span
+              >
+              {t.of} <span class="font-medium">{$totalPRs}</span>
+              {t.results}
+            </p>
+          </div>
+          <div>
+            <nav
+              class="isolate inline-flex -space-x-px rounded-md shadow-sm"
+              aria-label="Pagination"
+            >
+              <button
+                on:click={goToPreviousPage}
+                disabled={$currentPage <= 1}
+                class="relative inline-flex items-center rounded-l-md px-2 py-2 text-gray-400 ring-1 ring-inset ring-gray-300 hover:bg-gray-50 focus:z-20 focus:outline-offset-0 disabled:opacity-50 disabled:cursor-not-allowed"
+              >
+                <span class="sr-only">{t.previous}</span>
+                <svg
+                  class="h-5 w-5"
+                  viewBox="0 0 20 20"
+                  fill="currentColor"
+                  aria-hidden="true"
+                >
+                  <path
+                    fill-rule="evenodd"
+                    d="M12.79 5.23a.75.75 0 01-.02 1.06L8.832 10l3.938 3.71a.75.75 0 11-1.04 1.08l-4.5-4.25a.75.75 0 010-1.08l4.5-4.25a.75.75 0 011.06.02z"
+                    clip-rule="evenodd"
+                  />
+                </svg>
+              </button>
 
-      <div class="text-center mt-2 text-sm text-gray-600">
-        {t.pagination_page}
-        {$currentPage}
-        {t.pagination_of}
-        {$totalPages} - {t.pagination_showing}
-        {filteredPRs.length}
-        {t.pagination_prs}
+              <!-- Page numbers -->
+              {#each Array.from( { length: Math.min(5, $totalPages) }, (_, i) => {
+                  const startPage = Math.max(1, $currentPage - 2);
+                  const endPage = Math.min($totalPages, startPage + 4);
+                  const adjustedStartPage = Math.max(1, endPage - 4);
+                  return adjustedStartPage + i;
+                } ).filter((page) => page <= $totalPages) as page}
+                <button
+                  on:click={() => goToPage(page)}
+                  class="relative inline-flex items-center px-4 py-2 text-sm font-semibold {page ===
+                  $currentPage
+                    ? 'z-10 bg-blue-600 text-white focus:z-20 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-blue-600'
+                    : 'text-gray-900 ring-1 ring-inset ring-gray-300 hover:bg-gray-50 focus:z-20 focus:outline-offset-0'}"
+                >
+                  {page}
+                </button>
+              {/each}
+
+              <button
+                on:click={goToNextPage}
+                disabled={$currentPage >= $totalPages}
+                class="relative inline-flex items-center rounded-r-md px-2 py-2 text-gray-400 ring-1 ring-inset ring-gray-300 hover:bg-gray-50 focus:z-20 focus:outline-offset-0 disabled:opacity-50 disabled:cursor-not-allowed"
+              >
+                <span class="sr-only">{t.next}</span>
+                <svg
+                  class="h-5 w-5"
+                  viewBox="0 0 20 20"
+                  fill="currentColor"
+                  aria-hidden="true"
+                >
+                  <path
+                    fill-rule="evenodd"
+                    d="M7.21 14.77a.75.75 0 01.02-1.06L11.168 10 7.23 6.29a.75.75 0 111.04-1.08l4.5 4.25a.75.75 0 010 1.08l-4.5 4.25a.75.75 0 01-1.06-.02z"
+                    clip-rule="evenodd"
+                  />
+                </svg>
+              </button>
+            </nav>
+          </div>
+        </div>
       </div>
     {/if}
   {/if}

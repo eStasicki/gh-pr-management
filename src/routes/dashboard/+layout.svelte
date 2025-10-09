@@ -4,7 +4,7 @@
   import { page } from "$app/stores";
   import UserAccount from "$lib/components/UserAccount.svelte";
   import ConnectionLostModal from "$lib/components/modals/ConnectionLostModal.svelte";
-  import { auth } from "$lib/stores";
+  import { auth, admin } from "$lib/stores";
   import { initializeAuth } from "$lib/stores/supabaseAuth";
   import { supabaseAuth, signOut } from "$lib/stores/supabaseAuth";
   import { goto } from "$app/navigation";
@@ -57,6 +57,17 @@
           >
             {t.settings_nav}
           </a>
+          {#if $admin.isAdmin}
+            <a
+              href="/admin"
+              class="px-4 py-2 rounded-lg transition-colors duration-200 {$page
+                .url.pathname === '/admin'
+                ? 'bg-red-100 text-red-700 font-semibold'
+                : 'text-gray-600 hover:text-gray-800 hover:bg-gray-100'}"
+            >
+              Panel Admina
+            </a>
+          {/if}
         </nav>
         <button
           on:click={handleSignOut}

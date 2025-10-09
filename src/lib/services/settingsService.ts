@@ -8,6 +8,7 @@ export interface UserSettings {
   repo_name: string;
   enterprise_url?: string;
   requires_vpn?: boolean;
+  demo_mode?: boolean;
   created_at?: string;
   updated_at?: string;
 }
@@ -54,6 +55,7 @@ export const settingsService = {
           repo_name: settings.repo_name,
           enterprise_url: settings.enterprise_url,
           requires_vpn: settings.requires_vpn,
+          demo_mode: settings.demo_mode,
           updated_at: new Date().toISOString(),
         })
         .eq("user_id", user.id)
@@ -76,6 +78,7 @@ export const settingsService = {
           repo_name: settings.repo_name,
           enterprise_url: settings.enterprise_url,
           requires_vpn: settings.requires_vpn,
+          demo_mode: settings.demo_mode,
         })
         .select()
         .single();

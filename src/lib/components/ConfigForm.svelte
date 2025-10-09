@@ -7,6 +7,7 @@
     auth,
     loadConfigFromSupabase,
     saveConfigToSupabase,
+    admin,
   } from "$lib/stores";
   import { language } from "$lib/stores/language";
   import { translations } from "$lib/translations";
@@ -153,18 +154,23 @@
   }
 
   async function toggleDemoMode() {
-    if (isDemoMode()) {
-      disableDemoMode();
-      successMessage = "Tryb demo został wyłączony";
-    } else {
-      enableDemoMode();
-      successMessage = "Tryb demo został włączony - 50 przykładowych PR";
-    }
+    try {
+      if (isDemoMode()) {
+        await disableDemoMode();
+        successMessage = "Tryb demo został wyłączony";
+      } else {
+        await enableDemoMode();
+        successMessage = "Tryb demo został włączony - 50 przykładowych PR";
+      }
 
-    // Wyczyść komunikat po 3 sekundach
-    setTimeout(() => {
-      successMessage = "";
-    }, 3000);
+      // Wyczyść komunikat po 3 sekundach
+      setTimeout(() => {
+        successMessage = "";
+      }, 3000);
+    } catch (error) {
+      console.error("Error toggling demo mode:", error);
+      errorMessage = "Błąd podczas zmiany trybu demo";
+    }
   }
 </script>
 
@@ -349,19 +355,21 @@
       </label>
     </div>
 
-    <div class="border-t pt-6">
-      <h3 class="text-lg font-semibold text-gray-800 mb-4">{t.demo_mode}</h3>
-      <p class="text-sm text-gray-600 mb-4">
-        Tryb demo pozwala na testowanie aplikacji z przykładowymi danymi bez
-        konieczności konfiguracji GitHub API.
-      </p>
-      <button
-        on:click={toggleDemoMode}
-        class="w-full bg-purple-600 text-white px-6 py-3 rounded-lg text-base font-semibold cursor-pointer transition-all duration-300 hover:bg-purple-700"
-      >
-        {isDemoMode() ? t.disable_demo : t.enable_demo}
-      </button>
-    </div>
+    {#if $admin.isAdmin}
+      <div class="border-t pt-6">
+        <h3 class="text-lg font-semibold text-gray-800 mb-4">{t.demo_mode}</h3>
+        <p class="text-sm text-gray-600 mb-4">
+          Tryb demo pozwala na testowanie aplikacji z przykładowymi danymi bez
+          konieczności konfiguracji GitHub API.
+        </p>
+        <button
+          on:click={toggleDemoMode}
+          class="w-full bg-purple-600 text-white px-6 py-3 rounded-lg text-base font-semibold cursor-pointer transition-all duration-300 hover:bg-purple-700"
+        >
+          {isDemoMode() ? t.disable_demo : t.enable_demo}
+        </button>
+      </div>
+    {/if}
 
     <button
       on:click={saveConfig}
