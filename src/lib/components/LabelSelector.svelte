@@ -142,6 +142,11 @@
     bind:selectedIndex
     bind:dropdownElement
     displayField="name"
+    isMultiSelect={true}
+    selectedItems={selectedLabels.map((labelName) => ({
+      name: labelName,
+      color: "",
+    }))}
     onToggle={handleToggle}
     onClose={handleClose}
     onSearchChange={handleSearchChange}

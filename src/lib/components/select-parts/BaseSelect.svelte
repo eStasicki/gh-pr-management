@@ -19,9 +19,20 @@
   export let onValueChange: (value: string) => void = () => {};
   export let items: any[] = [];
   export let displayField: string = "";
+  export let isMultiSelect: boolean = false;
+  export let selectedItems: any[] = [];
 
   $: slotItems = items;
   $: slotSelectedIndex = selectedIndex;
+
+  function isItemSelected(item: any): boolean {
+    if (!isMultiSelect || !selectedItems) return false;
+    const value = displayField ? item[displayField] : item;
+    return selectedItems.some((selected) => {
+      const selectedValue = displayField ? selected[displayField] : selected;
+      return selectedValue === value;
+    });
+  }
   export let isLoading = false;
   export let error = "";
   export let onRetry: () => void = () => {};
@@ -222,18 +233,37 @@
               class="w-full text-left px-4 py-2 hover:bg-gray-100 focus:bg-gray-100 focus:outline-none border-b border-gray-200 last:border-b-0 {slotSelectedIndex ===
               index
                 ? 'bg-gray-100 text-gray-900'
-                : 'text-gray-700'}"
+                : isItemSelected(item)
+                  ? 'bg-green-100 text-green-700'
+                  : 'text-gray-700'}"
               on:click={() => {
                 onSelect(item);
                 const value = displayField ? item[displayField] : item;
                 onValueChange(value);
-                handleClose();
+                if (!isMultiSelect) {
+                  handleClose();
+                }
               }}
             >
               <div class="flex items-center justify-between">
                 <span class="font-mono text-sm">
                   {displayField ? item[displayField] : item}
                 </span>
+                {#if isItemSelected(item)}
+                  <svg
+                    class="w-4 h-4 text-green-600"
+                    fill="none"
+                    stroke="currentColor"
+                    viewBox="0 0 24 24"
+                  >
+                    <path
+                      stroke-linecap="round"
+                      stroke-linejoin="round"
+                      stroke-width="2"
+                      d="M5 13l4 4L19 7"
+                    ></path>
+                  </svg>
+                {/if}
               </div>
             </button>
           {/each}
