@@ -47,7 +47,7 @@
 
 {#if isOpen}
   <div
-    class="fixed inset-0 bg-[#00000090] flex items-center justify-center z-50"
+    class="fixed inset-0 bg-[#00000090] flex items-center justify-center z-50 backdrop-blur-[5px]"
     on:keydown={escapeKeyHandler.handleKeydown}
     on:click={backdropHandler.handleBackdropClick}
     role="dialog"
