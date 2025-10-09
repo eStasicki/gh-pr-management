@@ -1,5 +1,6 @@
 import { config, validateAuth } from "$lib/stores";
 import { get } from "svelte/store";
+import { isDemoMode } from "$lib/utils/demoMode";
 
 export interface GitHubPR {
   number: number;
@@ -255,6 +256,21 @@ class GitHubAPI {
 
   async getBranches(): Promise<string[]> {
     const currentConfig = get(config);
+
+    // Skip API calls in demo mode
+    if (isDemoMode()) {
+      console.log("🎭 Demo mode: returning mock branches");
+      return ["main", "develop", "feature/demo", "hotfix/demo"];
+    }
+
+    // Validate configuration before making API calls
+    if (!currentConfig.owner || !currentConfig.repo || !currentConfig.token) {
+      console.warn(
+        "GitHub configuration is incomplete, returning empty branches list"
+      );
+      return [];
+    }
+
     const branches: string[] = [];
     let page = 1;
     const perPage = 100;
@@ -287,6 +303,32 @@ class GitHubAPI {
 
   async getLabels(): Promise<Array<{ name: string; color: string }>> {
     const currentConfig = get(config);
+
+    // Skip API calls in demo mode
+    if (isDemoMode()) {
+      console.log("🎭 Demo mode: returning mock labels");
+      return [
+        { name: "bug", color: "d73a4a" },
+        { name: "enhancement", color: "a2eeef" },
+        { name: "documentation", color: "0075ca" },
+        { name: "good first issue", color: "7057ff" },
+        { name: "help wanted", color: "008672" },
+        { name: "priority: high", color: "ff0000" },
+        { name: "priority: medium", color: "ffa500" },
+        { name: "priority: low", color: "00ff00" },
+        { name: "status: in-progress", color: "fbca04" },
+        { name: "status: review", color: "0e8a16" },
+      ];
+    }
+
+    // Validate configuration before making API calls
+    if (!currentConfig.owner || !currentConfig.repo || !currentConfig.token) {
+      console.warn(
+        "GitHub configuration is incomplete, returning empty labels list"
+      );
+      return [];
+    }
+
     const labels: Array<{ name: string; color: string }> = [];
     let page = 1;
     const perPage = 100;

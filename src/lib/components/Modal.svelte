@@ -6,6 +6,12 @@
   export let isOpen = false;
   export let title = "";
   export let maxWidth = "max-w-lg";
+  export let showDefaultFooter = false;
+  export let cancelText = "Anuluj";
+  export let confirmText = "Potwierdź";
+  export let confirmDisabled = false;
+  export let onCancel: (() => void) | undefined = undefined;
+  export let onConfirm: (() => void) | undefined = undefined;
 
   const dispatch = createEventDispatcher();
 
@@ -19,6 +25,22 @@
 
   function closeModal() {
     dispatch("close");
+  }
+
+  function handleCancel() {
+    if (onCancel) {
+      onCancel();
+    } else {
+      closeModal();
+    }
+  }
+
+  function handleConfirm() {
+    if (onConfirm) {
+      onConfirm();
+    } else {
+      closeModal();
+    }
   }
 </script>
 
@@ -56,7 +78,32 @@
         {title}
       </h3>
 
-      <slot />
+      <div class="space-y-6">
+        <slot />
+      </div>
+
+      {#if showDefaultFooter}
+        <div class="flex gap-3 justify-end mt-6 pt-4 border-t border-gray-200">
+          <button
+            on:click={handleCancel}
+            class="px-4 py-2 bg-gray-200 text-gray-700 rounded-lg font-semibold cursor-pointer transition-all duration-300 hover:bg-gray-300"
+          >
+            {cancelText}
+          </button>
+          <button
+            on:click={handleConfirm}
+            disabled={confirmDisabled}
+            class="px-4 py-2 bg-blue-600 text-white rounded-lg font-semibold cursor-pointer transition-all duration-300 hover:bg-blue-700 disabled:opacity-50 disabled:cursor-not-allowed"
+          >
+            {confirmText}
+          </button>
+        </div>
+      {:else}
+        <slot name="footer" />
+      {/if}
+
+      <slot name="processing" />
+      <slot name="results" />
     </div>
   </div>
 {/if}
