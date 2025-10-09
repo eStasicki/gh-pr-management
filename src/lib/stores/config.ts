@@ -111,11 +111,28 @@ if (browser) {
 
   // Clear selected PRs when repository changes
   let previousRepo = "";
+  let isInitialLoad = true;
   config.subscribe((value) => {
     const currentRepo = `${value.owner}/${value.repo}`;
+
+    // Skip the first load to avoid clearing selections on page refresh
+    if (isInitialLoad) {
+      previousRepo = currentRepo;
+      isInitialLoad = false;
+      console.log(
+        "🔧 Initial config load, setting previousRepo to:",
+        currentRepo
+      );
+      return;
+    }
+
     if (previousRepo && previousRepo !== currentRepo && currentRepo !== "/") {
       // Repository changed, clear selected PRs
       localStorage.removeItem("selectedPRs");
+      // Also reset the store to keep consistency
+      import("./prs").then(({ selectedPRs }) => {
+        selectedPRs.set([]);
+      });
       console.log("Repository changed, cleared selected PRs");
     }
     previousRepo = currentRepo;

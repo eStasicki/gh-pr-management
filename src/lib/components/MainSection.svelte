@@ -81,7 +81,16 @@
   }
 
   $: if (allUserPRs.length > 0) {
+    console.log("🔄 MainSection: allUserPRs loaded, validating selections:", {
+      allUserPRsCount: allUserPRs.length,
+      selectedPRsCount: $selectedPRs.length,
+      selectedPRs: $selectedPRs,
+    });
     prSelectionHandlers.validateSelectedPRs(allUserPRs, (selected) => {
+      console.log("🔄 MainSection: validateSelectedPRs callback called:", {
+        before: $selectedPRs,
+        after: selected,
+      });
       selectedPRs.set(selected);
     });
   }

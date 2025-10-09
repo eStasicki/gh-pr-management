@@ -16,14 +16,30 @@ export function createPRSelectionHandlers(selectedPRsValue: number[]) {
     allUserPRs: any[],
     onSelectionChange: (selected: number[]) => void
   ): void {
-    if (allUserPRs.length === 0) return;
+    if (allUserPRs.length === 0) {
+      console.log(
+        "🔍 validateSelectedPRs: allUserPRs is empty, skipping validation"
+      );
+      return;
+    }
 
     const allSearchPRNumbers = allUserPRs.map((pr) => pr.number);
     const validSelectedPRs = selectedPRsValue.filter((prNumber) =>
       allSearchPRNumbers.includes(prNumber)
     );
 
+    console.log("🔍 validateSelectedPRs:", {
+      allSearchPRNumbers: allSearchPRNumbers.length,
+      selectedPRsValue: selectedPRsValue.length,
+      validSelectedPRs: validSelectedPRs.length,
+      willUpdate: validSelectedPRs.length !== selectedPRsValue.length,
+    });
+
     if (validSelectedPRs.length !== selectedPRsValue.length) {
+      console.log("⚠️ validateSelectedPRs: Removing invalid selections:", {
+        before: selectedPRsValue,
+        after: validSelectedPRs,
+      });
       onSelectionChange(validSelectedPRs);
     }
   }
