@@ -53,7 +53,7 @@ export const translations: Translations = {
       "Połączenie utracone. Najprawdopodobniej nie posiadasz włączonego VPN. Włącz VPN aby nawiązać połączenie z aplikacją ponownie.",
     retry_connection: "Spróbuj ponownie",
     token_security_warning:
-      "⚠️ Tokeny są szyfrowane i przechowywane lokalnie. Tylko Ty masz do nich dostęp.",
+      "⚠️ Tokeny oraz dane do repozytorium są szyfrowane przez WebCrypto API (AES-GCM-256) a następnie przechowywane w bazie danych. Tylko Ty masz do nich dostęp.",
     author: "Autor",
     last_updated: "Ostatnia aktualizacja",
     pagination_page: "Strona",
@@ -106,6 +106,7 @@ export const translations: Translations = {
     to: "do",
     of: "z",
     results: "wyników",
+    loaded_prs: "Załadowano {loaded} z {total} PR",
   },
   en: {
     config_title: "Configuration",
@@ -159,7 +160,7 @@ export const translations: Translations = {
       "Connection lost. You probably don't have VPN enabled. Enable VPN to reconnect to the application.",
     retry_connection: "Retry Connection",
     token_security_warning:
-      "⚠️ Tokens are encrypted and stored locally. Only you have access to them.",
+      "⚠️ Tokens or repository data are encrypted using WebCrypto API (AES-GCM-256) and then stored in the database. Only you have access to them.",
     author: "Author",
     last_updated: "Last updated",
     pagination_page: "Page",
@@ -212,5 +213,6 @@ export const translations: Translations = {
     to: "to",
     of: "of",
     results: "results",
+    loaded_prs: "Loaded {loaded} out of {total} PRs",
   },
 };

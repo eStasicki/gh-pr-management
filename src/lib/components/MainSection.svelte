@@ -118,7 +118,9 @@
         </h2>
         {#if $prs.length > 0}
           <p class="text-sm text-gray-600 mt-1">
-            Loaded {$prs.length} out of {$totalPRs} PRs
+            {t.loaded_prs
+              .replace("{loaded}", $prs.length)
+              .replace("{total}", $totalPRs)}
           </p>
         {/if}
       </div>
