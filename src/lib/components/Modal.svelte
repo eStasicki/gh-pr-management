@@ -1,5 +1,5 @@
 <script lang="ts">
-  import { createEventDispatcher } from "svelte";
+  import { createEventDispatcher, onMount, onDestroy } from "svelte";
   import { fade, fly, scale } from "svelte/transition";
   import { createBackdropClickHandler } from "$lib/utils/uiUtils";
   import { createEscapeKeyHandler } from "$lib/utils/keyboardUtils";
@@ -43,6 +43,31 @@
       closeModal();
     }
   }
+
+  // Block scroll when modal is open
+  function blockScroll() {
+    if (typeof document !== "undefined") {
+      document.body.style.overflow = "hidden";
+    }
+  }
+
+  function unblockScroll() {
+    if (typeof document !== "undefined") {
+      document.body.style.overflow = "";
+    }
+  }
+
+  // Reactive block to handle scroll blocking
+  $: if (isOpen) {
+    blockScroll();
+  } else {
+    unblockScroll();
+  }
+
+  // Cleanup on component destroy
+  onDestroy(() => {
+    unblockScroll();
+  });
 </script>
 
 {#if isOpen}
