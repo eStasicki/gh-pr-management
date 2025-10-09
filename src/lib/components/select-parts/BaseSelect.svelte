@@ -1,5 +1,5 @@
 <script lang="ts">
-  import { onMount, onDestroy } from "svelte";
+  import { onMount, onDestroy, tick } from "svelte";
   import { createClickOutsideHandler } from "$lib/utils/uiUtils";
   import {
     createEscapeKeyHandler,
@@ -10,6 +10,7 @@
   export let selectedIndex = -1;
   export let selectedValue = "";
   export let dropdownElement: HTMLDivElement;
+  let containerElement: HTMLDivElement;
   export let onToggle: () => void = () => {};
   export let onClose: () => void = () => {};
   export let onSearchChange: (term: string) => void = () => {};
@@ -105,23 +106,39 @@
   }
 
   // Setup click outside handler when dropdown opens
-  $: if (isOpen && dropdownElement) {
+  $: if (isOpen) {
+    setupClickOutsideHandler();
+  } else {
+    removeClickOutsideHandler();
+  }
+
+  async function setupClickOutsideHandler() {
+    // Wait for DOM to update
+    await tick();
+
+    if (!containerElement) {
+      return;
+    }
+
     // Remove existing handler if any
     if (clickOutsideHandler) {
       clickOutsideHandler.removeEventListener();
     }
 
-    // Add new handler with a small delay to avoid immediate closure
-    setTimeout(() => {
-      if (isOpen && dropdownElement) {
-        clickOutsideHandler = createClickOutsideHandler(
-          dropdownElement,
-          isOpen,
-          handleClose
-        );
-        clickOutsideHandler.addEventListener();
-      }
-    }, 10);
+    // Add new handler
+    clickOutsideHandler = createClickOutsideHandler(
+      containerElement,
+      true,
+      handleClose
+    );
+    clickOutsideHandler.addEventListener();
+  }
+
+  function removeClickOutsideHandler() {
+    if (clickOutsideHandler) {
+      clickOutsideHandler.removeEventListener();
+      clickOutsideHandler = null;
+    }
   }
 
   onDestroy(() => {
@@ -131,7 +148,7 @@
   });
 </script>
 
-<div class="relative">
+<div class="relative" bind:this={containerElement}>
   <div class="relative">
     <input
       type="text"
