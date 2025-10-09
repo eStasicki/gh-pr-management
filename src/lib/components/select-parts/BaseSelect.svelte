@@ -1,5 +1,6 @@
 <script lang="ts">
   import { onMount, onDestroy, tick } from "svelte";
+  import { fade, fly, scale } from "svelte/transition";
   import { createClickOutsideHandler } from "$lib/utils/uiUtils";
   import {
     createEscapeKeyHandler,
@@ -167,7 +168,7 @@
       on:input={handleSearchChange}
       on:click={handleToggle}
       on:keydown={handleKeydown}
-      class="w-full px-4 py-3 pr-10 border-2 border-gray-200 rounded-lg text-base transition-colors focus:outline-none focus:border-blue-500 focus:ring-4 focus:ring-blue-100"
+      class="w-full px-4 py-3 pr-10 border-2 border-gray-200 rounded-lg text-base transition-all duration-200 focus:outline-none focus:border-blue-500 focus:ring-4 focus:ring-blue-100"
     />
 
     <button
@@ -198,6 +199,7 @@
     <div
       bind:this={dropdownElement}
       class="absolute z-10 w-full mt-1 bg-white border border-gray-200 rounded-lg shadow-lg max-h-60 overflow-y-auto"
+      transition:fly={{ y: -10, duration: 200 }}
     >
       {#if isLoading}
         <div class="p-4 text-center text-gray-500">
@@ -230,7 +232,7 @@
             <button
               type="button"
               data-index={index}
-              class="w-full text-left px-4 py-2 hover:bg-gray-100 focus:bg-gray-100 focus:outline-none border-b border-gray-200 last:border-b-0 {slotSelectedIndex ===
+              class="w-full text-left px-4 py-2 hover:bg-gray-100 focus:bg-gray-100 focus:outline-none border-b border-gray-200 last:border-b-0 transition-colors duration-150 {slotSelectedIndex ===
               index
                 ? 'bg-gray-100 text-gray-900'
                 : isItemSelected(item)
@@ -244,6 +246,7 @@
                   handleClose();
                 }
               }}
+              transition:fade={{ duration: 150, delay: index * 20 }}
             >
               <div class="flex items-center justify-between">
                 <span class="font-mono text-sm">
@@ -251,10 +254,11 @@
                 </span>
                 {#if isItemSelected(item)}
                   <svg
-                    class="w-4 h-4 text-green-600"
+                    class="w-4 h-4 text-green-600 transition-all duration-200"
                     fill="none"
                     stroke="currentColor"
                     viewBox="0 0 24 24"
+                    transition:scale={{ duration: 200 }}
                   >
                     <path
                       stroke-linecap="round"

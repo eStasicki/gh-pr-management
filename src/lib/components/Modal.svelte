@@ -1,5 +1,6 @@
 <script lang="ts">
   import { createEventDispatcher } from "svelte";
+  import { fade, fly, scale } from "svelte/transition";
   import { createBackdropClickHandler } from "$lib/utils/uiUtils";
   import { createEscapeKeyHandler } from "$lib/utils/keyboardUtils";
 
@@ -52,12 +53,17 @@
     role="dialog"
     aria-modal="true"
     tabindex="-1"
+    transition:fade={{ duration: 200 }}
   >
-    <div class="bg-white rounded-lg p-6 w-full {maxWidth} mx-4 relative">
+    <div
+      class="bg-white rounded-lg p-6 w-full {maxWidth} mx-4 relative"
+      transition:scale={{ duration: 250, start: 0.95 }}
+    >
       <button
         on:click={closeModal}
         class="absolute top-4 right-4 text-gray-400 hover:text-gray-600 transition-colors duration-200"
         aria-label="Close modal"
+        transition:scale={{ duration: 200, delay: 50 }}
       >
         <svg
           class="w-6 h-6"
@@ -74,16 +80,25 @@
         </svg>
       </button>
 
-      <h3 class="text-xl font-bold text-gray-800 mb-4 pr-8">
+      <h3
+        class="text-xl font-bold text-gray-800 mb-4 pr-8"
+        transition:fly={{ y: -20, duration: 300, delay: 100 }}
+      >
         {title}
       </h3>
 
-      <div class="space-y-6">
+      <div
+        class="space-y-6"
+        transition:fly={{ y: 20, duration: 300, delay: 150 }}
+      >
         <slot />
       </div>
 
       {#if showDefaultFooter}
-        <div class="flex gap-3 justify-end mt-6 pt-4 border-t border-gray-200">
+        <div
+          class="flex gap-3 justify-end mt-6 pt-4 border-t border-gray-200"
+          transition:fly={{ y: 20, duration: 300, delay: 200 }}
+        >
           <button
             on:click={handleCancel}
             class="px-4 py-2 bg-gray-200 text-gray-700 rounded-lg font-semibold cursor-pointer transition-all duration-300 hover:bg-gray-300"
@@ -99,11 +114,17 @@
           </button>
         </div>
       {:else}
-        <slot name="footer" />
+        <div transition:fly={{ y: 20, duration: 300, delay: 200 }}>
+          <slot name="footer" />
+        </div>
       {/if}
 
-      <slot name="processing" />
-      <slot name="results" />
+      <div transition:fly={{ y: 20, duration: 300, delay: 250 }}>
+        <slot name="processing" />
+      </div>
+      <div transition:fly={{ y: 20, duration: 300, delay: 300 }}>
+        <slot name="results" />
+      </div>
     </div>
   </div>
 {/if}
