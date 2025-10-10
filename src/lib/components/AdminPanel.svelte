@@ -4,6 +4,7 @@
   import { language } from "$lib/stores/language";
   import { translations } from "$lib/translations";
   import { browser } from "$app/environment";
+  import ApiStatus from "./ApiStatus.svelte";
 
   let t = translations.pl;
   let usersWithRoles: Array<{
@@ -15,6 +16,7 @@
   let isLoading = false;
   let errorMessage = "";
   let successMessage = "";
+  let activeTab = "users";
 
   $: if (browser) {
     t = translations[$language];
@@ -45,7 +47,6 @@
       const newRole = currentRole === "admin" ? "user" : "admin";
       await adminService.setUserRole(userId, newRole);
 
-      // Odśwież listę
       await loadUsersWithRoles();
 
       successMessage = `Rola użytkownika została zmieniona na ${newRole}`;
@@ -66,118 +67,234 @@
       minute: "2-digit",
     });
   }
+
+  function setActiveTab(tab: string) {
+    activeTab = tab;
+  }
 </script>
 
 <div class="bg-white rounded-2xl p-8 mb-6 shadow-2xl">
-  <h2 class="text-2xl font-bold text-gray-800 mb-6">
-    Zarządzanie administratorami
-  </h2>
+  <h2 class="text-2xl font-bold text-gray-800 mb-6">Panel Administratora</h2>
 
-  {#if errorMessage}
-    <div
-      class="p-4 bg-red-50 border border-red-200 rounded-lg text-red-700 mb-6"
-    >
-      {errorMessage}
-    </div>
-  {/if}
-
-  {#if successMessage}
-    <div
-      class="p-4 bg-green-50 border border-green-200 rounded-lg text-green-700 mb-6"
-    >
-      {successMessage}
-    </div>
-  {/if}
-
-  {#if isLoading}
-    <div class="flex items-center justify-center py-8">
-      <svg
-        class="animate-spin h-8 w-8 text-blue-600"
-        xmlns="http://www.w3.org/2000/svg"
-        fill="none"
-        viewBox="0 0 24 24"
-      >
-        <circle
-          class="opacity-25"
-          cx="12"
-          cy="12"
-          r="10"
-          stroke="currentColor"
-          stroke-width="4"
-        ></circle>
-        <path
-          class="opacity-75"
-          fill="currentColor"
-          d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"
-        ></path>
-      </svg>
-      <span class="ml-3 text-gray-600">Ładowanie użytkowników...</span>
-    </div>
-  {:else}
-    <div class="overflow-x-auto">
-      <table class="w-full table-auto">
-        <thead>
-          <tr class="border-b border-gray-200">
-            <th class="text-left py-3 px-4 font-semibold text-gray-700"
-              >Email</th
-            >
-            <th class="text-left py-3 px-4 font-semibold text-gray-700"
-              >Data dodania roli</th
-            >
-            <th class="text-left py-3 px-4 font-semibold text-gray-700">Rola</th
-            >
-            <th class="text-left py-3 px-4 font-semibold text-gray-700"
-              >Akcje</th
-            >
-          </tr>
-        </thead>
-        <tbody>
-          {#each usersWithRoles as user}
-            <tr class="border-b border-gray-100 hover:bg-gray-50">
-              <td class="py-3 px-4 text-gray-800">{user.email}</td>
-              <td class="py-3 px-4 text-gray-600"
-                >{formatDate(user.created_at)}</td
-              >
-              <td class="py-3 px-4">
-                <span
-                  class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium {user.role ===
-                  'admin'
-                    ? 'bg-red-100 text-red-800'
-                    : 'bg-gray-100 text-gray-800'}"
-                >
-                  {user.role === "admin" ? "Administrator" : "Użytkownik"}
-                </span>
-              </td>
-              <td class="py-3 px-4">
-                <button
-                  on:click={() => toggleUserRole(user.id, user.role)}
-                  class="px-3 py-1 text-sm font-medium rounded-md transition-colors {user.role ===
-                  'admin'
-                    ? 'bg-red-100 text-red-700 hover:bg-red-200'
-                    : 'bg-green-100 text-green-700 hover:bg-green-200'}"
-                >
-                  {user.role === "admin" ? "Usuń admina" : "Ustaw admina"}
-                </button>
-              </td>
-            </tr>
-          {/each}
-        </tbody>
-      </table>
+  <!-- Responsive Tab Layout -->
+  <div class="flex flex-col lg:flex-row gap-6">
+    <!-- Tab Navigation -->
+    <!-- Mobile: Horizontal with scroll -->
+    <div class="lg:hidden">
+      <nav class="flex space-x-1 overflow-x-auto pb-2 scrollbar-hide">
+        <button
+          on:click={() => setActiveTab("users")}
+          class="flex-shrink-0 flex items-center px-4 py-2 text-sm font-medium rounded-lg transition-colors duration-200 whitespace-nowrap {activeTab ===
+          'users'
+            ? 'bg-blue-100 text-blue-700 border-b-2 border-blue-500'
+            : 'text-gray-600 hover:text-gray-900 hover:bg-gray-50'}"
+        >
+          <svg
+            class="w-4 h-4 mr-2"
+            fill="none"
+            stroke="currentColor"
+            viewBox="0 0 24 24"
+          >
+            <path
+              stroke-linecap="round"
+              stroke-linejoin="round"
+              stroke-width="2"
+              d="M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0zm6 3a2 2 0 11-4 0 2 2 0 014 0zM7 10a2 2 0 11-4 0 2 2 0 014 0z"
+            />
+          </svg>
+          Użytkownicy
+        </button>
+        <button
+          on:click={() => setActiveTab("api")}
+          class="flex-shrink-0 flex items-center px-4 py-2 text-sm font-medium rounded-lg transition-colors duration-200 whitespace-nowrap {activeTab ===
+          'api'
+            ? 'bg-blue-100 text-blue-700 border-b-2 border-blue-500'
+            : 'text-gray-600 hover:text-gray-900 hover:bg-gray-50'}"
+        >
+          <svg
+            class="w-4 h-4 mr-2"
+            fill="none"
+            stroke="currentColor"
+            viewBox="0 0 24 24"
+          >
+            <path
+              stroke-linecap="round"
+              stroke-linejoin="round"
+              stroke-width="2"
+              d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z"
+            />
+          </svg>
+          API
+        </button>
+      </nav>
     </div>
 
-    {#if usersWithRoles.length === 0}
-      <div class="text-center py-8 text-gray-500">
-        Brak użytkowników do wyświetlenia
-      </div>
-    {/if}
-  {/if}
+    <!-- Desktop: Vertical sidebar -->
+    <div class="hidden lg:block w-64 flex-shrink-0">
+      <nav class="space-y-1">
+        <button
+          on:click={() => setActiveTab("users")}
+          class="w-full flex items-center px-3 py-2 text-sm font-medium rounded-lg transition-colors duration-200 {activeTab ===
+          'users'
+            ? 'bg-blue-100 text-blue-700 border-r-2 border-blue-500'
+            : 'text-gray-600 hover:text-gray-900 hover:bg-gray-50'}"
+        >
+          <svg
+            class="w-5 h-5 mr-3"
+            fill="none"
+            stroke="currentColor"
+            viewBox="0 0 24 24"
+          >
+            <path
+              stroke-linecap="round"
+              stroke-linejoin="round"
+              stroke-width="2"
+              d="M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0zm6 3a2 2 0 11-4 0 2 2 0 014 0zM7 10a2 2 0 11-4 0 2 2 0 014 0z"
+            />
+          </svg>
+          Zarządzanie użytkownikami
+        </button>
+        <button
+          on:click={() => setActiveTab("api")}
+          class="w-full flex items-center px-3 py-2 text-sm font-medium rounded-lg transition-colors duration-200 {activeTab ===
+          'api'
+            ? 'bg-blue-100 text-blue-700 border-r-2 border-blue-500'
+            : 'text-gray-600 hover:text-gray-900 hover:bg-gray-50'}"
+        >
+          <svg
+            class="w-5 h-5 mr-3"
+            fill="none"
+            stroke="currentColor"
+            viewBox="0 0 24 24"
+          >
+            <path
+              stroke-linecap="round"
+              stroke-linejoin="round"
+              stroke-width="2"
+              d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z"
+            />
+          </svg>
+          Monitoring API
+        </button>
+      </nav>
+    </div>
 
-  <div class="mt-6 pt-6 border-t border-gray-200">
-    <button
-      on:click={loadUsersWithRoles}
-      class="px-4 py-2 bg-blue-600 text-white rounded-lg font-semibold cursor-pointer transition-all duration-300 hover:bg-blue-700"
-    >
-      Odśwież listę
-    </button>
+    <!-- Tab Content -->
+    <div class="flex-1 min-w-0">
+      {#if activeTab === "users"}
+        <!-- Users Management Tab -->
+        {#if errorMessage}
+          <div
+            class="p-4 bg-red-50 border border-red-200 rounded-lg text-red-700 mb-6"
+          >
+            {errorMessage}
+          </div>
+        {/if}
+
+        {#if successMessage}
+          <div
+            class="p-4 bg-green-50 border border-green-200 rounded-lg text-green-700 mb-6"
+          >
+            {successMessage}
+          </div>
+        {/if}
+
+        {#if isLoading}
+          <div class="flex items-center justify-center py-8">
+            <svg
+              class="animate-spin h-8 w-8 text-blue-600"
+              xmlns="http://www.w3.org/2000/svg"
+              fill="none"
+              viewBox="0 0 24 24"
+            >
+              <circle
+                class="opacity-25"
+                cx="12"
+                cy="12"
+                r="10"
+                stroke="currentColor"
+                stroke-width="4"
+              ></circle>
+              <path
+                class="opacity-75"
+                fill="currentColor"
+                d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"
+              ></path>
+            </svg>
+            <span class="ml-3 text-gray-600">Ładowanie użytkowników...</span>
+          </div>
+        {:else}
+          <div class="overflow-x-auto">
+            <table class="w-full table-auto">
+              <thead>
+                <tr class="border-b border-gray-200">
+                  <th class="text-left py-3 px-4 font-semibold text-gray-700"
+                    >Email</th
+                  >
+                  <th class="text-left py-3 px-4 font-semibold text-gray-700"
+                    >Data dodania roli</th
+                  >
+                  <th class="text-left py-3 px-4 font-semibold text-gray-700"
+                    >Rola</th
+                  >
+                  <th class="text-left py-3 px-4 font-semibold text-gray-700"
+                    >Akcje</th
+                  >
+                </tr>
+              </thead>
+              <tbody>
+                {#each usersWithRoles as user}
+                  <tr class="border-b border-gray-100 hover:bg-gray-50">
+                    <td class="py-3 px-4 text-gray-800">{user.email}</td>
+                    <td class="py-3 px-4 text-gray-600"
+                      >{formatDate(user.created_at)}</td
+                    >
+                    <td class="py-3 px-4">
+                      <span
+                        class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium {user.role ===
+                        'admin'
+                          ? 'bg-red-100 text-red-800'
+                          : 'bg-gray-100 text-gray-800'}"
+                      >
+                        {user.role === "admin" ? "Administrator" : "Użytkownik"}
+                      </span>
+                    </td>
+                    <td class="py-3 px-4">
+                      <button
+                        on:click={() => toggleUserRole(user.id, user.role)}
+                        class="px-3 py-1 text-sm font-medium rounded-md transition-colors {user.role ===
+                        'admin'
+                          ? 'bg-red-100 text-red-700 hover:bg-red-200'
+                          : 'bg-green-100 text-green-700 hover:bg-green-200'}"
+                      >
+                        {user.role === "admin" ? "Usuń admina" : "Ustaw admina"}
+                      </button>
+                    </td>
+                  </tr>
+                {/each}
+              </tbody>
+            </table>
+          </div>
+
+          {#if usersWithRoles.length === 0}
+            <div class="text-center py-8 text-gray-500">
+              Brak użytkowników do wyświetlenia
+            </div>
+          {/if}
+        {/if}
+
+        <div class="mt-6 pt-6 border-t border-gray-200">
+          <button
+            on:click={loadUsersWithRoles}
+            class="px-4 py-2 bg-blue-600 text-white rounded-lg font-semibold cursor-pointer transition-all duration-300 hover:bg-blue-700"
+          >
+            Odśwież listę
+          </button>
+        </div>
+      {:else if activeTab === "api"}
+        <!-- API Monitoring Tab -->
+        <ApiStatus />
+      {/if}
+    </div>
   </div>
 </div>

@@ -44,7 +44,7 @@
   $: prSelectionHandlers = createPRSelectionHandlers($selectedPRs);
 
   $: if (isDemoMode() && allUserPRs.length === 0) {
-    getAllUserPRs($config, $currentUser).then((allPRs) => {
+    getAllUserPRs($config, $currentUser, 50).then((allPRs) => {
       allUserPRs = allPRs;
       initializeSearch(allUserPRs);
     });
@@ -194,7 +194,7 @@
         bind:allPRsSelected
         on:selectAll={() => prListComponent?.toggleAllPRs()}
         on:refresh={() => {
-          getAllUserPRs($config, $currentUser).then((allPRs) => {
+          getAllUserPRs($config, $currentUser, 50).then((allPRs) => {
             allUserPRs = allPRs;
             updateSearchIndex(allUserPRs);
 
@@ -232,7 +232,7 @@
 
     <PRList
       bind:this={prListComponent}
-      onGetAllUserPRs={() => getAllUserPRs($config, $currentUser)}
+      onGetAllUserPRs={() => getAllUserPRs($config, $currentUser, 50)}
       onPageChange={handlePageChange}
     />
   </div>
