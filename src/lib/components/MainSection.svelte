@@ -12,7 +12,7 @@
   import { language } from "$lib/stores/language";
   import { translations } from "$lib/translations";
   import { browser } from "$app/environment";
-  import PRList from "./PRList.svelte";
+  import PRList from "./pr-list/PRList.svelte";
   import ChangeSelectedBaseModal from "./modals/ChangeSelectedBaseModal.svelte";
   import RemoveLabelsModal from "./modals/RemoveLabelsModal.svelte";
   import AddLabelsModal from "./modals/AddLabelsModal.svelte";
