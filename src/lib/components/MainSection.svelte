@@ -109,7 +109,7 @@
     >
       <div
         class={twMerge(
-          "flex w-full",
+          "flex w-full lg:max-w-sm relative",
           $selectedPRs.length > 0 && "gap-3 flex-row"
         )}
       >
@@ -117,11 +117,17 @@
           type="text"
           placeholder={t.search_prs}
           bind:value={$searchTerm}
-          class="flex-1 lg:max-w-sm px-4 py-3 border-2 border-gray-200 rounded-lg text-base transition-colors focus:outline-none focus:border-blue-500 w-full"
+          class="flex-1 lg:max-w-80 px-4 py-3 border-2 border-gray-200 rounded-lg text-base transition-colors focus:outline-none focus:border-blue-500 w-full"
         />
 
         {#if $selectedPRs.length > 0}
-          <div class="text-sm text-gray-500 flex items-center">
+          <div
+            class={twMerge(
+              "text-sm text-gray-500 flex items-center",
+              $selectedPRs.length > 0 &&
+                "lg:absolute lg:self-center lg:-right-13"
+            )}
+          >
             <span class="text-primary-600 font-semibold flex items-center">
               {t.selected}: {$selectedPRs.length}
               <button
