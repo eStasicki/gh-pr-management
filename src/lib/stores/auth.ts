@@ -25,11 +25,23 @@ export const auth = writable<AuthState>(defaultAuthState);
 
 async function validateAuth(force = false) {
   const currentConfig = get(config);
-  const { token, owner, repo } = currentConfig;
+  const { token, owner, repo, requiresVpn } = currentConfig;
 
   if (!token || !owner || !repo) {
     auth.set({
       isLoggedIn: false,
+      isValidating: false,
+      lastValidation: Date.now(),
+      connectionError: null,
+      showConnectionLostModal: false,
+    });
+    return;
+  }
+
+  // Jeśli requiresVpn jest false, pomiń walidację połączenia z VPN
+  if (!requiresVpn) {
+    auth.set({
+      isLoggedIn: true,
       isValidating: false,
       lastValidation: Date.now(),
       connectionError: null,
@@ -86,7 +98,10 @@ function setupApiErrorHandling() {
 
       if (response.status === 401 || response.status === 403) {
         const currentState = get(auth);
-        if (currentState.isLoggedIn) {
+        const currentConfig = get(config);
+
+        // Sprawdź czy requiresVpn jest włączone przed pokazaniem modala
+        if (currentState.isLoggedIn && currentConfig.requiresVpn) {
           auth.update((state) => ({
             ...state,
             isLoggedIn: false,
@@ -100,7 +115,10 @@ function setupApiErrorHandling() {
       return response;
     } catch (error) {
       const currentState = get(auth);
-      if (currentState.isLoggedIn) {
+      const currentConfig = get(config);
+
+      // Sprawdź czy requiresVpn jest włączone przed pokazaniem modala
+      if (currentState.isLoggedIn && currentConfig.requiresVpn) {
         auth.update((state) => ({
           ...state,
           isLoggedIn: false,
@@ -122,12 +140,17 @@ function startConnectionMonitoring() {
   });
 
   window.addEventListener("offline", () => {
-    auth.update((state) => ({
-      ...state,
-      isLoggedIn: false,
-      connectionError: "No internet connection",
-      showConnectionLostModal: true,
-    }));
+    const currentConfig = get(config);
+
+    // Sprawdź czy requiresVpn jest włączone przed pokazaniem modala
+    if (currentConfig.requiresVpn) {
+      auth.update((state) => ({
+        ...state,
+        isLoggedIn: false,
+        connectionError: "No internet connection",
+        showConnectionLostModal: true,
+      }));
+    }
   });
 }
 

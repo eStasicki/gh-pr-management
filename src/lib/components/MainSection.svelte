@@ -1,22 +1,25 @@
 <script lang="ts">
-  import { onMount } from "svelte";
+  import { onMount, onDestroy } from "svelte";
   import {
     config,
     selectedPRs,
     searchTerm,
     currentUser,
     currentPage,
+    prs,
+    totalPRs,
   } from "$lib/stores";
   import { language } from "$lib/stores/language";
   import { translations } from "$lib/translations";
   import { browser } from "$app/environment";
-  import PRList from "./PRList.svelte";
+  import PRList from "./pr-list/PRList.svelte";
   import ChangeSelectedBaseModal from "./modals/ChangeSelectedBaseModal.svelte";
   import RemoveLabelsModal from "./modals/RemoveLabelsModal.svelte";
   import AddLabelsModal from "./modals/AddLabelsModal.svelte";
   import ActionsMenu from "./ActionsMenu.svelte";
   import { loadUser, loadPRs, getAllUserPRs } from "$lib/utils/apiUtils";
   import { createPRSelectionHandlers } from "$lib/utils/prUtils";
+  import { isDemoMode } from "$lib/utils/demoMode";
 
   let t = translations.pl;
   let prListComponent: any;
@@ -33,14 +36,29 @@
 
   $: prSelectionHandlers = createPRSelectionHandlers($selectedPRs);
 
+  $: if (isDemoMode() && allUserPRs.length === 0) {
+    getAllUserPRs($config, $currentUser, $searchTerm).then((prs) => {
+      allUserPRs = prs;
+    });
+  }
+
   onMount(() => {
+    if (isDemoMode()) {
+      return;
+    }
+
     loadUser($config).then(() => {
-      loadPRs(1, $config, $currentUser, $searchTerm);
+      loadPRs($config, $currentUser, $searchTerm, 1);
       getAllUserPRs($config, $currentUser, $searchTerm).then((prs) => {
         allUserPRs = prs;
       });
     });
   });
+
+  // Function to handle page changes
+  function handlePageChange(page: number) {
+    loadPRs($config, $currentUser, $searchTerm, page);
+  }
 
   let allPRsSelected = false;
 
@@ -54,12 +72,12 @@
     });
   }
 
-  let searchTimeout: number;
+  let searchTimeout: ReturnType<typeof setTimeout>;
   $: if (typeof window !== "undefined" && $searchTerm !== undefined) {
     clearTimeout(searchTimeout);
     searchTimeout = setTimeout(() => {
       // Load PRs for page 1 with new search term
-      loadPRs(1, $config, $currentUser, $searchTerm);
+      loadPRs($config, $currentUser, $searchTerm, 1);
       // Also get all user PRs for selection logic
       getAllUserPRs($config, $currentUser, $searchTerm).then((prs) => {
         allUserPRs = prs;
@@ -71,9 +89,18 @@
 <div class="bg-white rounded-2xl p-8 mb-6 shadow-2xl">
   <div class="mb-8">
     <div class="flex justify-between items-center mb-6">
-      <h2 class="text-2xl font-bold text-gray-800">
-        {t.my_prs}
-      </h2>
+      <div>
+        <h2 class="text-2xl font-bold text-gray-800">
+          {t.my_prs}
+        </h2>
+        {#if $prs.length > 0}
+          <p class="text-sm text-gray-600 mt-1">
+            {t.loaded_prs
+              .replace("{loaded}", $prs.length)
+              .replace("{total}", $totalPRs)}
+          </p>
+        {/if}
+      </div>
     </div>
 
     <div
@@ -90,7 +117,7 @@
         bind:allPRsSelected
         on:selectAll={() => prListComponent?.toggleAllPRs()}
         on:refresh={() =>
-          loadPRs($currentPage, $config, $currentUser, $searchTerm)}
+          loadPRs($config, $currentUser, $searchTerm, $currentPage)}
         on:changeSelectedBase={() => {
           if ($selectedPRs.length > 0) {
             changeSelectedBaseModalOpen = true;
@@ -138,23 +165,26 @@
 
     <PRList
       bind:this={prListComponent}
-      onLoadPRs={(page) => loadPRs(page, $config, $currentUser, $searchTerm)}
       onGetAllUserPRs={() => getAllUserPRs($config, $currentUser, $searchTerm)}
+      onPageChange={handlePageChange}
     />
   </div>
 </div>
 
 <ChangeSelectedBaseModal
   bind:isOpen={changeSelectedBaseModalOpen}
+  on:refresh={() => loadPRs($config, $currentUser, $searchTerm, $currentPage)}
   onClose={() => (changeSelectedBaseModalOpen = false)}
 />
 
 <RemoveLabelsModal
   bind:isOpen={removeLabelsModalOpen}
+  on:refresh={() => loadPRs($config, $currentUser, $searchTerm, $currentPage)}
   onClose={() => (removeLabelsModalOpen = false)}
 />
 
 <AddLabelsModal
   bind:isOpen={addLabelsModalOpen}
+  on:refresh={() => loadPRs($config, $currentUser, $searchTerm, $currentPage)}
   onClose={() => (addLabelsModalOpen = false)}
 />

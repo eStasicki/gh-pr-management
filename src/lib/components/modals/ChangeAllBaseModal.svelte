@@ -3,6 +3,7 @@
   import { translations } from "$lib/translations";
   import { browser } from "$app/environment";
   import Modal from "../Modal.svelte";
+  import ModalFooter from "../modal-parts/ModalFooter.svelte";
 
   export let isOpen = false;
   export let onClose: () => void;
@@ -31,10 +32,10 @@
 <Modal
   bind:isOpen
   title={t.change_all_base}
-  maxWidth="max-w-md"
+  maxWidth="max-w-2xl"
   on:close={handleModalClose}
 >
-  <div class="mb-4">
+  <div>
     <label
       for="base-branch"
       class="block text-sm font-semibold text-gray-700 mb-2"
@@ -50,19 +51,11 @@
     />
   </div>
 
-  <div class="flex gap-3 justify-end">
-    <button
-      on:click={handleModalClose}
-      class="px-4 py-2 bg-gray-200 text-gray-700 rounded-lg font-semibold cursor-pointer transition-all duration-300 hover:bg-gray-300"
-    >
-      {t.cancel}
-    </button>
-    <button
-      on:click={handleConfirm}
-      disabled={!baseBranch.trim()}
-      class="px-4 py-2 bg-blue-600 text-white rounded-lg font-semibold cursor-pointer transition-all duration-300 hover:bg-blue-700 disabled:bg-gray-400 disabled:cursor-not-allowed"
-    >
-      {t.confirm}
-    </button>
-  </div>
+  <ModalFooter
+    cancelText={t.cancel}
+    confirmText={t.confirm}
+    confirmDisabled={!baseBranch.trim()}
+    onCancel={handleModalClose}
+    onConfirm={handleConfirm}
+  />
 </Modal>

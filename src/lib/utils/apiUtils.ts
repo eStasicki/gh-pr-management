@@ -8,6 +8,19 @@ import {
   totalPRs,
   searchTerm,
 } from "$lib/stores";
+import { isDemoMode } from "$lib/utils/demoMode";
+import { generateMockPRs, mockCurrentUser } from "$lib/mockData";
+import { get } from "svelte/store";
+import { PER_PAGE } from "$lib/consts";
+
+// Cache dla mock danych w trybie demo
+let mockPRsCache: any[] = [];
+let mockPRsGenerated = false;
+
+export function resetMockCache() {
+  mockPRsCache = [];
+  mockPRsGenerated = false;
+}
 
 export function getApiBaseUrl(configValue: any): string {
   if (configValue.enterpriseUrl) {
@@ -17,6 +30,12 @@ export function getApiBaseUrl(configValue: any): string {
 }
 
 export async function loadUser(configValue: any): Promise<void> {
+  if (isDemoMode()) {
+    // W trybie demo ustaw mock użytkownika
+    currentUser.set(mockCurrentUser);
+    return;
+  }
+
   try {
     const response = await fetch(`${getApiBaseUrl(configValue)}/user`, {
       headers: {
@@ -29,25 +48,60 @@ export async function loadUser(configValue: any): Promise<void> {
       const user = await response.json();
       currentUser.set(user);
     }
-  } catch (error) {
-    console.error("Error loading user:", error);
-  }
+  } catch (error) {}
 }
 
 export async function loadPRs(
-  page: number = 1,
   configValue: any,
   currentUserValue: any,
-  searchTermValue: string
+  searchTermValue: string,
+  page: number = 1
 ): Promise<void> {
+  if (isDemoMode()) {
+    // W trybie demo użyj mock danych z cache
+    isLoading.set(true);
+
+    // Generuj mock PR-y tylko raz
+    if (!mockPRsGenerated) {
+      mockPRsCache = generateMockPRs(50);
+      mockPRsGenerated = true;
+    }
+
+    // Filtruj mock PR-y po tytule jeśli podano searchTerm
+    let filteredPRs = mockPRsCache;
+    if (searchTermValue.trim()) {
+      const searchLower = searchTermValue.toLowerCase();
+      filteredPRs = mockPRsCache.filter((pr) =>
+        pr.title.toLowerCase().includes(searchLower)
+      );
+    }
+
+    const perPage = PER_PAGE;
+    const startIndex = (page - 1) * perPage;
+    const endIndex = Math.min(startIndex + perPage, filteredPRs.length);
+    const pagePRs = filteredPRs.slice(startIndex, endIndex);
+
+    const delay = Math.random() * 500 + 500;
+    await new Promise((resolve) => setTimeout(resolve, delay));
+
+    prs.set(pagePRs);
+    isLoading.set(false);
+
+    const totalPagesCount = Math.ceil(filteredPRs.length / perPage);
+    currentPage.set(page);
+    totalPages.set(totalPagesCount);
+    totalPRs.set(filteredPRs.length);
+
+    return;
+  }
+
   if (!currentUserValue?.login) {
-    console.error("No current user available");
     return;
   }
 
   isLoading.set(true);
   try {
-    const perPage = 20;
+    const perPage = PER_PAGE;
     let searchQuery = `repo:${configValue.owner}/${configValue.repo} is:pr is:open author:${currentUserValue.login}`;
 
     if (searchTermValue.trim()) {
@@ -96,15 +150,15 @@ export async function loadPRs(
 
     const validPRs = prsData.filter((pr) => pr !== null);
     prs.set(validPRs);
-    currentPage.set(page);
+    isLoading.set(false);
 
     const totalCount = searchResult.total_count || 0;
     const totalPagesCount = Math.ceil(totalCount / perPage);
+
+    currentPage.set(page);
     totalPages.set(totalPagesCount);
     totalPRs.set(totalCount);
   } catch (error) {
-    console.error("Error loading PRs:", error);
-  } finally {
     isLoading.set(false);
   }
 }
@@ -114,8 +168,23 @@ export async function getAllUserPRs(
   currentUserValue: any,
   searchTermValue: string
 ): Promise<any[]> {
+  if (isDemoMode()) {
+    if (!mockPRsGenerated) {
+      mockPRsCache = generateMockPRs(50);
+      mockPRsGenerated = true;
+    }
+
+    if (searchTermValue.trim()) {
+      const searchLower = searchTermValue.toLowerCase();
+      return mockPRsCache.filter((pr) =>
+        pr.title.toLowerCase().includes(searchLower)
+      );
+    }
+
+    return mockPRsCache;
+  }
+
   if (!currentUserValue?.login) {
-    console.error("No current user available");
     return [];
   }
 
@@ -182,7 +251,6 @@ export async function getAllUserPRs(
 
     return allPRs;
   } catch (error) {
-    console.error("Error loading all user PRs:", error);
     return [];
   }
 }

@@ -16,7 +16,9 @@ export function createPRSelectionHandlers(selectedPRsValue: number[]) {
     allUserPRs: any[],
     onSelectionChange: (selected: number[]) => void
   ): void {
-    if (allUserPRs.length === 0) return;
+    if (allUserPRs.length === 0) {
+      return;
+    }
 
     const allSearchPRNumbers = allUserPRs.map((pr) => pr.number);
     const validSelectedPRs = selectedPRsValue.filter((prNumber) =>

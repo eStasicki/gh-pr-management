@@ -75,7 +75,10 @@ export function createClickOutsideHandler(
   closeHandler: () => void
 ) {
   function handleClickOutside(event: MouseEvent) {
-    if (!element || element.contains(event.target as Node)) {
+    if (!element) {
+      return;
+    }
+    if (element.contains(event.target as Node)) {
       return;
     }
     closeHandler();

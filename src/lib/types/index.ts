@@ -3,6 +3,8 @@ export interface GitHubConfig {
   owner: string;
   repo: string;
   enterpriseUrl: string;
+  requiresVpn?: boolean;
+  demoMode?: boolean;
 }
 
 export interface GitHubUser {

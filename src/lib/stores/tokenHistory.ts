@@ -26,9 +26,7 @@ function loadTokenHistory(): TokenHistoryItem[] {
         }));
       }
     }
-  } catch (error) {
-    console.error("Failed to load token history:", error);
-  }
+  } catch (error) {}
 
   return [];
 }
@@ -42,9 +40,7 @@ function saveTokenHistory(history: TokenHistoryItem[]) {
       token: encryptToken(item.token),
     }));
     localStorage.setItem(STORAGE_KEY, JSON.stringify(encryptedHistory));
-  } catch (error) {
-    console.error("Failed to save token history:", error);
-  }
+  } catch (error) {}
 }
 
 export const tokenHistory = writable<TokenHistoryItem[]>(loadTokenHistory());

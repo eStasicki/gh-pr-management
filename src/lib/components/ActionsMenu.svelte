@@ -1,5 +1,6 @@
 <script lang="ts">
   import { createEventDispatcher, onMount } from "svelte";
+  import { fade, fly, scale } from "svelte/transition";
   import { auth } from "$lib/stores";
   import { language } from "$lib/stores/language";
   import { translations } from "$lib/translations";
@@ -90,7 +91,7 @@
       </svg>
       {t.actions}
       <svg
-        class="w-4 h-4 transition-transform duration-200 absolute right-4 lg:right-0 lg:relative {actionsDropdownOpen
+        class="w-4 h-4 transition-all duration-200 absolute right-4 lg:right-0 lg:relative {actionsDropdownOpen
           ? 'rotate-180'
           : ''}"
         fill="none"
@@ -110,39 +111,45 @@
   {#if actionsDropdownOpen}
     <div
       class="absolute right-0 mt-2 w-full lg:w-48 bg-white rounded-lg shadow-lg border border-gray-200 z-10"
+      transition:fly={{ y: -10, duration: 200 }}
     >
       <div class="py-1">
-        <SelectAllAction
-          bind:allPRsSelected
-          on:selectAll={() => {
-            actionsHandlers.handleSelectAll();
-            actionsDropdownOpen = dropdownHandlers.closeDropdown();
-          }}
-        />
-        <RefreshAction
-          on:refresh={() => {
-            actionsHandlers.handleRefresh();
-            actionsDropdownOpen = dropdownHandlers.closeDropdown();
-          }}
-        />
-        <ChangeSelectedBaseAction
-          on:changeSelectedBase={() => {
-            actionsHandlers.handleChangeSelectedBase();
-            actionsDropdownOpen = dropdownHandlers.closeDropdown();
-          }}
-        />
-        <RemoveLabelsAction
-          on:removeLabels={() => {
-            actionsHandlers.handleRemoveLabels();
-            actionsDropdownOpen = dropdownHandlers.closeDropdown();
-          }}
-        />
-        <AddLabelsAction
-          on:addLabels={() => {
-            actionsHandlers.handleAddLabels();
-            actionsDropdownOpen = dropdownHandlers.closeDropdown();
-          }}
-        />
+        <div transition:fly={{ x: 10, duration: 150, delay: 50 }}>
+          <SelectAllAction
+            bind:allPRsSelected
+            on:selectAll={() => {
+              actionsHandlers.handleSelectAll();
+            }}
+          />
+        </div>
+        <div transition:fly={{ x: 10, duration: 150, delay: 100 }}>
+          <RefreshAction
+            on:refresh={() => {
+              actionsHandlers.handleRefresh();
+            }}
+          />
+        </div>
+        <div transition:fly={{ x: 10, duration: 150, delay: 150 }}>
+          <ChangeSelectedBaseAction
+            on:changeSelectedBase={() => {
+              actionsHandlers.handleChangeSelectedBase();
+            }}
+          />
+        </div>
+        <div transition:fly={{ x: 10, duration: 150, delay: 200 }}>
+          <RemoveLabelsAction
+            on:removeLabels={() => {
+              actionsHandlers.handleRemoveLabels();
+            }}
+          />
+        </div>
+        <div transition:fly={{ x: 10, duration: 150, delay: 250 }}>
+          <AddLabelsAction
+            on:addLabels={() => {
+              actionsHandlers.handleAddLabels();
+            }}
+          />
+        </div>
       </div>
     </div>
   {/if}
