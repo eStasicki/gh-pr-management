@@ -83,7 +83,7 @@
     }
   }
 
-  function getPageNumbers() {
+  $: pageNumbers = (() => {
     const pages: (number | string)[] = [];
     const maxVisible = 7;
 
@@ -123,7 +123,7 @@
     }
 
     return pages;
-  }
+  })();
 </script>
 
 <div class="space-y-4">
@@ -217,7 +217,7 @@
               </svg>
             </button>
 
-            {#each getPageNumbers() as page}
+            {#each pageNumbers as page}
               {#if page === "..."}
                 <span
                   class="relative inline-flex items-center px-4 py-2 text-sm font-semibold text-gray-700 ring-1 ring-inset ring-gray-300"
