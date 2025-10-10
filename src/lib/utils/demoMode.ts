@@ -11,13 +11,31 @@ import { get } from "svelte/store";
 import { config, saveConfigToSupabase } from "$lib/stores/config";
 import { resetMockCache } from "$lib/utils/apiUtils";
 
+// Cache dla mock danych w trybie demo
+let mockPRsCache: any[] = [];
+let mockPRsGenerated = false;
+
 export async function enableDemoMode() {
   currentUser.set(mockCurrentUser);
 
-  prs.set([]);
+  // Generuj mock PR-y
+  if (!mockPRsGenerated) {
+    mockPRsCache = generateMockPRs(50);
+    mockPRsGenerated = true;
+  }
+
+  // Ustaw pierwsze 10 PR-ów jako wyświetlane
+  const perPage = 10;
+  const startIndex = 0;
+  const endIndex = Math.min(startIndex + perPage, mockPRsCache.length);
+  const pagePRs = mockPRsCache.slice(startIndex, endIndex);
+
+  prs.set(pagePRs);
   currentPage.set(1);
-  totalPages.set(0);
-  totalPRs.set(0);
+
+  const totalPagesCount = Math.ceil(mockPRsCache.length / perPage);
+  totalPages.set(totalPagesCount);
+  totalPRs.set(mockPRsCache.length);
   isLoading.set(false);
 
   const currentConfig = get(config);

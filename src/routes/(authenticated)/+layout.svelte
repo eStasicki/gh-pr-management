@@ -4,8 +4,9 @@
   import Navigation from "$lib/components/Navigation.svelte";
   import MobileNavigationModal from "$lib/components/modals/MobileNavigationModal.svelte";
   import ConnectionLostModal from "$lib/components/modals/ConnectionLostModal.svelte";
+  import BannedUserModal from "$lib/components/modals/BannedUserModal.svelte";
   import { auth } from "$lib/stores";
-  import { initializeAuth } from "$lib/stores/supabaseAuth";
+  import { initializeAuth, supabaseAuth } from "$lib/stores/supabaseAuth";
   import { language } from "$lib/stores/language";
   import { translations } from "$lib/translations";
   import { browser } from "$app/environment";
@@ -13,10 +14,13 @@
 
   let isMobileMenuOpen = false;
   let t = translations.pl;
+  let showBannedModal = false;
 
   $: if (browser) {
     t = translations[$language];
   }
+
+  $: showBannedModal = $supabaseAuth.bannedMessage !== null;
 
   onMount(() => {
     initializeAuth();
@@ -38,7 +42,9 @@
     <header
       class="bg-white rounded-2xl p-6 mb-6 shadow-2xl flex justify-between items-center"
     >
-      <h1 class="text-3xl font-bold text-gray-800">GitHub PR Management</h1>
+      <h1 class="text-3xl font-bold text-gray-800">
+        <a href="/">GitHub PR Management</a>
+      </h1>
 
       <div class="hidden lg:flex gap-4 items-center">
         <Navigation />
@@ -68,8 +74,17 @@
     <main>
       <slot />
     </main>
-    <div class="flex justify-end">
-      <LanguageSwitcher />
+    <div class="flex gap-3 lg:flex-row flex-col justify-between items-center">
+      <p class="text-sm text-white order-2 lg:order-1">
+        development by <a
+          href="mailto:estasicki@gmail.com"
+          target="_blank"
+          class="hover:underline">eStasicki</a
+        >
+      </p>
+      <div class="order-1 lg:order-2">
+        <LanguageSwitcher />
+      </div>
     </div>
   </div>
 </div>
@@ -79,3 +94,4 @@
   onClose={closeMobileMenu}
 />
 <ConnectionLostModal bind:isOpen={$auth.showConnectionLostModal} />
+<BannedUserModal bind:isOpen={showBannedModal} banInfo={null} />

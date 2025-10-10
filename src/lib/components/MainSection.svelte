@@ -8,6 +8,7 @@
     currentPage,
     prs,
     totalPRs,
+    totalPages,
   } from "$lib/stores";
   import { language } from "$lib/stores/language";
   import { translations } from "$lib/translations";
@@ -20,6 +21,12 @@
   import { loadUser, loadPRs, getAllUserPRs } from "$lib/utils/apiUtils";
   import { createPRSelectionHandlers } from "$lib/utils/prUtils";
   import { isDemoMode } from "$lib/utils/demoMode";
+  import { twMerge } from "$lib";
+  import {
+    searchPRs,
+    initializeSearch,
+    updateSearchIndex,
+  } from "$lib/utils/searchUtils";
 
   let t = translations.pl;
   let prListComponent: any;
@@ -27,6 +34,11 @@
   let removeLabelsModalOpen = false;
   let addLabelsModalOpen = false;
   let allUserPRs: any[] = [];
+  let searchTimeout: ReturnType<typeof setTimeout>;
+  let filteredPRs: any[] = [];
+  let hasLoaded = false; // Flaga żeby uniknąć wielokrotnego ładowania
+  let lastDemoMode = false; // Śledź poprzedni stan trybu demo
+  let lastSearchTerm = ""; // Śledź poprzedni termin wyszukiwania
 
   $: if (browser) {
     t = translations[$language];
@@ -37,27 +49,100 @@
   $: prSelectionHandlers = createPRSelectionHandlers($selectedPRs);
 
   $: if (isDemoMode() && allUserPRs.length === 0) {
-    getAllUserPRs($config, $currentUser, $searchTerm).then((prs) => {
-      allUserPRs = prs;
+    getAllUserPRs($config, $currentUser, 50).then((allPRs) => {
+      allUserPRs = allPRs;
+      initializeSearch(allUserPRs);
     });
   }
 
+  // Reactive statement - wykonuje się gdy $config się zmieni
+  $: if (
+    $config.token &&
+    !isDemoMode() &&
+    (!hasLoaded || lastDemoMode !== isDemoMode())
+  ) {
+    hasLoaded = true; // Ustaw flagę żeby uniknąć ponownego ładowania
+    lastDemoMode = isDemoMode();
+
+    loadUser($config)
+      .then(() => {
+        if (!$currentUser?.login) {
+          console.error(`[MainSection] No currentUser.login available!`);
+          return;
+        }
+
+        getAllUserPRs($config, $currentUser)
+          .then((allPRs) => {
+            allUserPRs = allPRs;
+            initializeSearch(allUserPRs);
+
+            // Inicjalizuj filteredPRs z wszystkimi PR-ami
+            filteredPRs = allPRs;
+
+            const perPage = 10;
+            const startIndex = 0;
+            const endIndex = Math.min(startIndex + perPage, filteredPRs.length);
+            const pagePRs = filteredPRs.slice(startIndex, endIndex);
+
+            prs.set(pagePRs);
+            totalPRs.set(filteredPRs.length);
+
+            const totalPagesCount = Math.ceil(filteredPRs.length / perPage);
+            totalPages.set(totalPagesCount);
+            currentPage.set(1);
+          })
+          .catch((error) => {
+            console.error(`[MainSection] Error loading PRs:`, error);
+          });
+      })
+      .catch((error) => {
+        console.error(`[MainSection] Error loading user:`, error);
+
+        // Jeśli błąd 401 (Unauthorized), włącz tryb demo jako fallback
+        if (
+          error.message?.includes("401") ||
+          error.message?.includes("Unauthorized")
+        ) {
+          import("$lib/utils/demoMode").then(({ enableDemoMode }) => {
+            enableDemoMode();
+          });
+        }
+      });
+  }
+
+  // Reactive statement dla trybu demo
+  $: if (isDemoMode() && (!hasLoaded || lastDemoMode !== isDemoMode())) {
+    hasLoaded = true;
+    lastDemoMode = isDemoMode();
+
+    // W trybie demo dane są już załadowane przez enableDemoMode
+    // Musimy zainicjalizować filteredPRs z wszystkimi mock PR-ami
+    if ($prs.length > 0) {
+      // Pobierz wszystkie mock PR-y z getAllUserPRs
+      getAllUserPRs($config, $currentUser, 50).then((allPRs) => {
+        allUserPRs = allPRs;
+        filteredPRs = allPRs;
+        initializeSearch(allUserPRs);
+      });
+    }
+  }
+
+  // onMount tylko dla trybu demo
   onMount(() => {
     if (isDemoMode()) {
-      return;
+      // Tryb demo jest już obsługiwany przez reactive statement z $config
     }
-
-    loadUser($config).then(() => {
-      loadPRs($config, $currentUser, $searchTerm, 1);
-      getAllUserPRs($config, $currentUser, $searchTerm).then((prs) => {
-        allUserPRs = prs;
-      });
-    });
   });
 
   // Function to handle page changes
   function handlePageChange(page: number) {
-    loadPRs($config, $currentUser, $searchTerm, page);
+    const perPage = 10;
+    const startIndex = (page - 1) * perPage;
+    const endIndex = Math.min(startIndex + perPage, filteredPRs.length);
+    const pagePRs = filteredPRs.slice(startIndex, endIndex);
+
+    prs.set(pagePRs);
+    currentPage.set(page);
   }
 
   let allPRsSelected = false;
@@ -72,17 +157,63 @@
     });
   }
 
-  let searchTimeout: ReturnType<typeof setTimeout>;
-  $: if (typeof window !== "undefined" && $searchTerm !== undefined) {
+  // Reactive statement - reaguje na zmiany w $prs (dla trybu demo)
+  $: if (isDemoMode() && $prs.length > 0 && filteredPRs.length === 0) {
+    // Pobierz wszystkie mock PR-y
+    getAllUserPRs($config, $currentUser, 50).then((allPRs) => {
+      allUserPRs = allPRs;
+      filteredPRs = allPRs;
+      initializeSearch(allUserPRs);
+    });
+  }
+  $: if (
+    typeof window !== "undefined" &&
+    $searchTerm !== undefined &&
+    $searchTerm !== "" &&
+    lastSearchTerm !== $searchTerm
+  ) {
+    lastSearchTerm = $searchTerm;
+
     clearTimeout(searchTimeout);
     searchTimeout = setTimeout(() => {
-      // Load PRs for page 1 with new search term
-      loadPRs($config, $currentUser, $searchTerm, 1);
-      // Also get all user PRs for selection logic
-      getAllUserPRs($config, $currentUser, $searchTerm).then((prs) => {
-        allUserPRs = prs;
-      });
-    }, 500);
+      if (allUserPRs.length > 0) {
+        filteredPRs = searchPRs(allUserPRs, $searchTerm);
+
+        const perPage = 10;
+        const startIndex = 0;
+        const endIndex = Math.min(startIndex + perPage, filteredPRs.length);
+        const pagePRs = filteredPRs.slice(startIndex, endIndex);
+
+        prs.set(pagePRs);
+        totalPRs.set(filteredPRs.length);
+
+        const totalPagesCount = Math.ceil(filteredPRs.length / perPage);
+        totalPages.set(totalPagesCount);
+        currentPage.set(1);
+      }
+    }, 300);
+  } else if (
+    typeof window !== "undefined" &&
+    $searchTerm === "" &&
+    lastSearchTerm !== ""
+  ) {
+    // Gdy searchTerm jest pusty, pokaż wszystkie PR-y
+    lastSearchTerm = "";
+
+    if (allUserPRs.length > 0) {
+      filteredPRs = allUserPRs;
+
+      const perPage = 10;
+      const startIndex = ($currentPage - 1) * perPage;
+      const endIndex = Math.min(startIndex + perPage, filteredPRs.length);
+      const pagePRs = filteredPRs.slice(startIndex, endIndex);
+
+      prs.set(pagePRs);
+      totalPRs.set(filteredPRs.length);
+
+      const totalPagesCount = Math.ceil(filteredPRs.length / perPage);
+      totalPages.set(totalPagesCount);
+    }
   }
 </script>
 
@@ -96,28 +227,90 @@
         {#if $prs.length > 0}
           <p class="text-sm text-gray-600 mt-1">
             {t.loaded_prs
-              .replace("{loaded}", $prs.length)
-              .replace("{total}", $totalPRs)}
+              .replace("{loaded}", String($prs.length))
+              .replace("{total}", String($totalPRs))}
           </p>
         {/if}
       </div>
     </div>
 
     <div
-      class="flex flex-col lg:flex-row gap-4 mb-6 items-center justify-between"
+      class="flex flex-col lg:flex-row gap-4 mb-6 items-center justify-between flex-wrap"
     >
-      <input
-        type="text"
-        placeholder={t.search_prs}
-        bind:value={$searchTerm}
-        class="flex-1 lg:max-w-sm px-4 py-3 border-2 border-gray-200 rounded-lg text-base transition-colors focus:outline-none focus:border-blue-500 w-full"
-      />
+      <div
+        class={twMerge(
+          "flex w-full lg:max-w-sm relative",
+          $selectedPRs.length > 0 && "gap-3 flex-row"
+        )}
+      >
+        <input
+          type="text"
+          placeholder={t.search_prs}
+          bind:value={$searchTerm}
+          class="flex-1 lg:max-w-80 px-4 py-3 border-2 border-gray-200 rounded-lg text-base transition-colors focus:outline-none focus:border-blue-500 w-full"
+        />
+
+        {#if $selectedPRs.length > 0}
+          <div
+            class={twMerge(
+              "text-sm text-gray-500 flex items-center",
+              $selectedPRs.length > 0 &&
+                "lg:absolute lg:self-center lg:-right-13"
+            )}
+          >
+            <span class="text-primary-600 font-semibold flex items-center">
+              {t.selected}: {$selectedPRs.length}
+              <button
+                on:click={() => selectedPRs.set([])}
+                class="text-gray-400 hover:text-red-500 transition-colors duration-200 p-1 rounded-full hover:bg-red-50 relative top-[1px] ml-1"
+                title="Clear selection"
+              >
+                <svg
+                  class="w-4 h-4"
+                  fill="none"
+                  stroke="currentColor"
+                  viewBox="0 0 24 24"
+                >
+                  <path
+                    stroke-linecap="round"
+                    stroke-linejoin="round"
+                    stroke-width="2"
+                    d="M6 18L18 6M6 6l12 12"
+                  ></path>
+                </svg>
+              </button>
+            </span>
+          </div>
+        {/if}
+      </div>
 
       <ActionsMenu
         bind:allPRsSelected
         on:selectAll={() => prListComponent?.toggleAllPRs()}
-        on:refresh={() =>
-          loadPRs($config, $currentUser, $searchTerm, $currentPage)}
+        on:refresh={() => {
+          getAllUserPRs($config, $currentUser, 50).then((allPRs) => {
+            allUserPRs = allPRs;
+            updateSearchIndex(allUserPRs);
+
+            filteredPRs = searchPRs(allUserPRs, $searchTerm);
+
+            const perPage = 10;
+            const totalPagesCount = Math.ceil(filteredPRs.length / perPage);
+            totalPages.set(totalPagesCount);
+
+            // Sprawdź czy currentPage nie przekracza totalPages
+            if ($currentPage > totalPagesCount) {
+              currentPage.set(1);
+            }
+
+            const startIndex = ($currentPage - 1) * perPage;
+            const endIndex = Math.min(startIndex + perPage, filteredPRs.length);
+            const pagePRs = filteredPRs.slice(startIndex, endIndex);
+
+            prs.set(pagePRs);
+            totalPRs.set(filteredPRs.length);
+          });
+        }}
         on:changeSelectedBase={() => {
           if ($selectedPRs.length > 0) {
             changeSelectedBaseModalOpen = true;
@@ -136,36 +329,9 @@
       />
     </div>
 
-    {#if $selectedPRs.length > 0}
-      <div class="text-sm text-gray-500 mb-6 flex items-center justify-between">
-        <span class="text-primary-600 font-semibold flex items-center">
-          {t.selected}: {$selectedPRs.length}
-          <button
-            on:click={() => selectedPRs.set([])}
-            class="text-gray-400 hover:text-red-500 transition-colors duration-200 p-1 rounded-full hover:bg-red-50 relative top-[1px] ml-1"
-            title="Clear selection"
-          >
-            <svg
-              class="w-4 h-4"
-              fill="none"
-              stroke="currentColor"
-              viewBox="0 0 24 24"
-            >
-              <path
-                stroke-linecap="round"
-                stroke-linejoin="round"
-                stroke-width="2"
-                d="M6 18L18 6M6 6l12 12"
-              ></path>
-            </svg>
-          </button>
-        </span>
-      </div>
-    {/if}
-
     <PRList
       bind:this={prListComponent}
-      onGetAllUserPRs={() => getAllUserPRs($config, $currentUser, $searchTerm)}
+      onGetAllUserPRs={() => getAllUserPRs($config, $currentUser, 50)}
       onPageChange={handlePageChange}
     />
   </div>
@@ -173,18 +339,87 @@
 
 <ChangeSelectedBaseModal
   bind:isOpen={changeSelectedBaseModalOpen}
-  on:refresh={() => loadPRs($config, $currentUser, $searchTerm, $currentPage)}
+  on:refresh={() => {
+    getAllUserPRs($config, $currentUser).then((allPRs) => {
+      allUserPRs = allPRs;
+      updateSearchIndex(allUserPRs);
+
+      filteredPRs = searchPRs(allUserPRs, $searchTerm);
+
+      const perPage = 10;
+      const totalPagesCount = Math.ceil(filteredPRs.length / perPage);
+      totalPages.set(totalPagesCount);
+
+      // Sprawdź czy currentPage nie przekracza totalPages
+      if ($currentPage > totalPagesCount) {
+        currentPage.set(1);
+      }
+
+      const startIndex = ($currentPage - 1) * perPage;
+      const endIndex = Math.min(startIndex + perPage, filteredPRs.length);
+      const pagePRs = filteredPRs.slice(startIndex, endIndex);
+
+      prs.set(pagePRs);
+      totalPRs.set(filteredPRs.length);
+    });
+  }}
   onClose={() => (changeSelectedBaseModalOpen = false)}
 />
 
 <RemoveLabelsModal
   bind:isOpen={removeLabelsModalOpen}
-  on:refresh={() => loadPRs($config, $currentUser, $searchTerm, $currentPage)}
+  on:refresh={() => {
+    getAllUserPRs($config, $currentUser).then((allPRs) => {
+      allUserPRs = allPRs;
+      updateSearchIndex(allUserPRs);
+
+      filteredPRs = searchPRs(allUserPRs, $searchTerm);
+
+      const perPage = 10;
+      const totalPagesCount = Math.ceil(filteredPRs.length / perPage);
+      totalPages.set(totalPagesCount);
+
+      // Sprawdź czy currentPage nie przekracza totalPages
+      if ($currentPage > totalPagesCount) {
+        currentPage.set(1);
+      }
+
+      const startIndex = ($currentPage - 1) * perPage;
+      const endIndex = Math.min(startIndex + perPage, filteredPRs.length);
+      const pagePRs = filteredPRs.slice(startIndex, endIndex);
+
+      prs.set(pagePRs);
+      totalPRs.set(filteredPRs.length);
+    });
+  }}
   onClose={() => (removeLabelsModalOpen = false)}
 />
 
 <AddLabelsModal
   bind:isOpen={addLabelsModalOpen}
-  on:refresh={() => loadPRs($config, $currentUser, $searchTerm, $currentPage)}
+  on:refresh={() => {
+    getAllUserPRs($config, $currentUser).then((allPRs) => {
+      allUserPRs = allPRs;
+      updateSearchIndex(allUserPRs);
+
+      filteredPRs = searchPRs(allUserPRs, $searchTerm);
+
+      const perPage = 10;
+      const totalPagesCount = Math.ceil(filteredPRs.length / perPage);
+      totalPages.set(totalPagesCount);
+
+      // Sprawdź czy currentPage nie przekracza totalPages
+      if ($currentPage > totalPagesCount) {
+        currentPage.set(1);
+      }
+
+      const startIndex = ($currentPage - 1) * perPage;
+      const endIndex = Math.min(startIndex + perPage, filteredPRs.length);
+      const pagePRs = filteredPRs.slice(startIndex, endIndex);
+
+      prs.set(pagePRs);
+      totalPRs.set(filteredPRs.length);
+    });
+  }}
   onClose={() => (addLabelsModalOpen = false)}
 />
