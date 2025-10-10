@@ -70,8 +70,17 @@
     <main>
       <slot />
     </main>
-    <div class="flex justify-end">
-      <LanguageSwitcher />
+    <div class="flex gap-3 lg:flex-row flex-col justify-between items-center">
+      <p class="text-sm text-white order-2 lg:order-1">
+        development by <a
+          href="mailto:estasicki@gmail.com"
+          target="_blank"
+          class="hover:underline">eStasicki</a
+        >
+      </p>
+      <div class="order-1 lg:order-2">
+        <LanguageSwitcher />
+      </div>
     </div>
   </div>
 </div>
