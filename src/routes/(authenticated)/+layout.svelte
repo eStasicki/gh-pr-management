@@ -4,8 +4,9 @@
   import Navigation from "$lib/components/Navigation.svelte";
   import MobileNavigationModal from "$lib/components/modals/MobileNavigationModal.svelte";
   import ConnectionLostModal from "$lib/components/modals/ConnectionLostModal.svelte";
+  import BannedUserModal from "$lib/components/modals/BannedUserModal.svelte";
   import { auth } from "$lib/stores";
-  import { initializeAuth } from "$lib/stores/supabaseAuth";
+  import { initializeAuth, supabaseAuth } from "$lib/stores/supabaseAuth";
   import { language } from "$lib/stores/language";
   import { translations } from "$lib/translations";
   import { browser } from "$app/environment";
@@ -13,10 +14,13 @@
 
   let isMobileMenuOpen = false;
   let t = translations.pl;
+  let showBannedModal = false;
 
   $: if (browser) {
     t = translations[$language];
   }
+
+  $: showBannedModal = $supabaseAuth.bannedMessage !== null;
 
   onMount(() => {
     initializeAuth();
@@ -90,3 +94,4 @@
   onClose={closeMobileMenu}
 />
 <ConnectionLostModal bind:isOpen={$auth.showConnectionLostModal} />
+<BannedUserModal bind:isOpen={showBannedModal} banInfo={null} />
