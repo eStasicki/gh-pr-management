@@ -38,7 +38,9 @@
     <header
       class="bg-white rounded-2xl p-6 mb-6 shadow-2xl flex justify-between items-center"
     >
-      <h1 class="text-3xl font-bold text-gray-800">GitHub PR Management</h1>
+      <h1 class="text-3xl font-bold text-gray-800">
+        <a href="/">GitHub PR Management</a>
+      </h1>
 
       <div class="hidden lg:flex gap-4 items-center">
         <Navigation />
