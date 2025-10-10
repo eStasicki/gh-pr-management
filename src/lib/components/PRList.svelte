@@ -13,7 +13,7 @@
   import { translations } from "$lib/translations";
   import { browser } from "$app/environment";
   import type { GitHubPR } from "$lib/types";
-
+  import { PER_PAGE } from "$lib/consts";
   let t = translations.pl;
 
   $: if (browser) {
@@ -178,7 +178,7 @@
     <!-- Pagination -->
     {#if $totalPages > 1}
       <div
-        class="flex items-center justify-between border-t border-gray-200 bg-white px-4 py-3 sm:px-6 mt-6"
+        class="flex items-center justify-between border-t border-gray-200 bg-white px-4 py-3 sm:px-0 mt-6"
       >
         <div class="flex flex-1 justify-between sm:hidden">
           <button
@@ -202,10 +202,12 @@
           <div>
             <p class="text-sm text-gray-700">
               {t.showing}
-              <span class="font-medium">{($currentPage - 1) * 20 + 1}</span>
+              <span class="font-medium"
+                >{($currentPage - 1) * PER_PAGE + 1}</span
+              >
               {t.to}
               <span class="font-medium"
-                >{Math.min($currentPage * 20, $totalPRs)}</span
+                >{Math.min($currentPage * PER_PAGE, $totalPRs)}</span
               >
               {t.of} <span class="font-medium">{$totalPRs}</span>
               {t.results}

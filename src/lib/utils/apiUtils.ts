@@ -11,6 +11,7 @@ import {
 import { isDemoMode } from "$lib/utils/demoMode";
 import { generateMockPRs, mockCurrentUser } from "$lib/mockData";
 import { get } from "svelte/store";
+import { PER_PAGE } from "$lib/consts";
 
 // Cache dla mock danych w trybie demo
 let mockPRsCache: any[] = [];
@@ -66,7 +67,7 @@ export async function loadPRs(
       mockPRsGenerated = true;
     }
 
-    const perPage = 20;
+    const perPage = PER_PAGE;
     const startIndex = (page - 1) * perPage;
     const endIndex = Math.min(startIndex + perPage, mockPRsCache.length);
     const pagePRs = mockPRsCache.slice(startIndex, endIndex);
@@ -91,7 +92,7 @@ export async function loadPRs(
 
   isLoading.set(true);
   try {
-    const perPage = 20;
+    const perPage = PER_PAGE;
     let searchQuery = `repo:${configValue.owner}/${configValue.repo} is:pr is:open author:${currentUserValue.login}`;
 
     if (searchTermValue.trim()) {
