@@ -20,6 +20,7 @@
   import { loadUser, loadPRs, getAllUserPRs } from "$lib/utils/apiUtils";
   import { createPRSelectionHandlers } from "$lib/utils/prUtils";
   import { isDemoMode } from "$lib/utils/demoMode";
+  import { twMerge } from "$lib";
 
   let t = translations.pl;
   let prListComponent: any;
@@ -104,14 +105,48 @@
     </div>
 
     <div
-      class="flex flex-col lg:flex-row gap-4 mb-6 items-center justify-between"
+      class="flex flex-col lg:flex-row gap-4 mb-6 items-center justify-between flex-wrap"
     >
-      <input
-        type="text"
-        placeholder={t.search_prs}
-        bind:value={$searchTerm}
-        class="flex-1 lg:max-w-sm px-4 py-3 border-2 border-gray-200 rounded-lg text-base transition-colors focus:outline-none focus:border-blue-500 w-full"
-      />
+      <div
+        class={twMerge(
+          "flex w-full",
+          $selectedPRs.length > 0 && "gap-3 flex-row"
+        )}
+      >
+        <input
+          type="text"
+          placeholder={t.search_prs}
+          bind:value={$searchTerm}
+          class="flex-1 lg:max-w-sm px-4 py-3 border-2 border-gray-200 rounded-lg text-base transition-colors focus:outline-none focus:border-blue-500 w-full"
+        />
+
+        {#if $selectedPRs.length > 0}
+          <div class="text-sm text-gray-500 flex items-center">
+            <span class="text-primary-600 font-semibold flex items-center">
+              {t.selected}: {$selectedPRs.length}
+              <button
+                on:click={() => selectedPRs.set([])}
+                class="text-gray-400 hover:text-red-500 transition-colors duration-200 p-1 rounded-full hover:bg-red-50 relative top-[1px] ml-1"
+                title="Clear selection"
+              >
+                <svg
+                  class="w-4 h-4"
+                  fill="none"
+                  stroke="currentColor"
+                  viewBox="0 0 24 24"
+                >
+                  <path
+                    stroke-linecap="round"
+                    stroke-linejoin="round"
+                    stroke-width="2"
+                    d="M6 18L18 6M6 6l12 12"
+                  ></path>
+                </svg>
+              </button>
+            </span>
+          </div>
+        {/if}
+      </div>
 
       <ActionsMenu
         bind:allPRsSelected
@@ -135,33 +170,6 @@
         }}
       />
     </div>
-
-    {#if $selectedPRs.length > 0}
-      <div class="text-sm text-gray-500 mb-6 flex items-center justify-between">
-        <span class="text-primary-600 font-semibold flex items-center">
-          {t.selected}: {$selectedPRs.length}
-          <button
-            on:click={() => selectedPRs.set([])}
-            class="text-gray-400 hover:text-red-500 transition-colors duration-200 p-1 rounded-full hover:bg-red-50 relative top-[1px] ml-1"
-            title="Clear selection"
-          >
-            <svg
-              class="w-4 h-4"
-              fill="none"
-              stroke="currentColor"
-              viewBox="0 0 24 24"
-            >
-              <path
-                stroke-linecap="round"
-                stroke-linejoin="round"
-                stroke-width="2"
-                d="M6 18L18 6M6 6l12 12"
-              ></path>
-            </svg>
-          </button>
-        </span>
-      </div>
-    {/if}
 
     <PRList
       bind:this={prListComponent}
