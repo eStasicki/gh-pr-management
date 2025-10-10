@@ -53,22 +53,12 @@
         allUserPRs = prs;
       });
     });
-
-    // Listen for pagination events
-    const handlePageChange = (event: CustomEvent) => {
-      const { page } = event.detail;
-      loadPRs($config, $currentUser, $searchTerm, page);
-    };
-
-    window.addEventListener("pageChange", handlePageChange as EventListener);
-
-    return () => {
-      window.removeEventListener(
-        "pageChange",
-        handlePageChange as EventListener
-      );
-    };
   });
+
+  // Function to handle page changes
+  function handlePageChange(page: number) {
+    loadPRs($config, $currentUser, $searchTerm, page);
+  }
 
   let allPRsSelected = false;
 
@@ -176,6 +166,7 @@
     <PRList
       bind:this={prListComponent}
       onGetAllUserPRs={() => getAllUserPRs($config, $currentUser, $searchTerm)}
+      onPageChange={handlePageChange}
     />
   </div>
 </div>
