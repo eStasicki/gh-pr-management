@@ -54,7 +54,6 @@ export async function loadUser(configValue: any): Promise<void> {
 export async function loadPRs(
   configValue: any,
   currentUserValue: any,
-  searchTermValue: string,
   page: number = 1
 ): Promise<void> {
   if (isDemoMode()) {
@@ -67,14 +66,7 @@ export async function loadPRs(
       mockPRsGenerated = true;
     }
 
-    // Filtruj mock PR-y po tytule jeśli podano searchTerm
-    let filteredPRs = mockPRsCache;
-    if (searchTermValue.trim()) {
-      const searchLower = searchTermValue.toLowerCase();
-      filteredPRs = mockPRsCache.filter((pr) =>
-        pr.title.toLowerCase().includes(searchLower)
-      );
-    }
+    const filteredPRs = mockPRsCache;
 
     const perPage = PER_PAGE;
     const startIndex = (page - 1) * perPage;
@@ -102,11 +94,7 @@ export async function loadPRs(
   isLoading.set(true);
   try {
     const perPage = PER_PAGE;
-    let searchQuery = `repo:${configValue.owner}/${configValue.repo} is:pr is:open author:${currentUserValue.login}`;
-
-    if (searchTermValue.trim()) {
-      searchQuery += ` ${searchTermValue}`;
-    }
+    const searchQuery = `repo:${configValue.owner}/${configValue.repo} is:pr is:open author:${currentUserValue.login}`;
 
     const response = await fetch(
       `${getApiBaseUrl(configValue)}/search/issues?q=${encodeURIComponent(
@@ -165,20 +153,12 @@ export async function loadPRs(
 
 export async function getAllUserPRs(
   configValue: any,
-  currentUserValue: any,
-  searchTermValue: string
+  currentUserValue: any
 ): Promise<any[]> {
   if (isDemoMode()) {
     if (!mockPRsGenerated) {
       mockPRsCache = generateMockPRs(50);
       mockPRsGenerated = true;
-    }
-
-    if (searchTermValue.trim()) {
-      const searchLower = searchTermValue.toLowerCase();
-      return mockPRsCache.filter((pr) =>
-        pr.title.toLowerCase().includes(searchLower)
-      );
     }
 
     return mockPRsCache;
@@ -194,11 +174,7 @@ export async function getAllUserPRs(
     const perPage = 1000;
 
     while (true) {
-      const searchQuery = `repo:${configValue.owner}/${
-        configValue.repo
-      } is:pr is:open author:${currentUserValue.login}${
-        searchTermValue ? ` ${searchTermValue}` : ""
-      }`;
+      const searchQuery = `repo:${configValue.owner}/${configValue.repo} is:pr is:open author:${currentUserValue.login}`;
 
       const response = await fetch(
         `${getApiBaseUrl(configValue)}/search/issues?q=${encodeURIComponent(

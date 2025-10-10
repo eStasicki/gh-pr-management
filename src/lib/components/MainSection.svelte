@@ -8,6 +8,7 @@
     currentPage,
     prs,
     totalPRs,
+    totalPages,
   } from "$lib/stores";
   import { language } from "$lib/stores/language";
   import { translations } from "$lib/translations";
@@ -21,6 +22,11 @@
   import { createPRSelectionHandlers } from "$lib/utils/prUtils";
   import { isDemoMode } from "$lib/utils/demoMode";
   import { twMerge } from "$lib";
+  import {
+    searchPRs,
+    initializeSearch,
+    updateSearchIndex,
+  } from "$lib/utils/searchUtils";
 
   let t = translations.pl;
   let prListComponent: any;
@@ -38,8 +44,9 @@
   $: prSelectionHandlers = createPRSelectionHandlers($selectedPRs);
 
   $: if (isDemoMode() && allUserPRs.length === 0) {
-    getAllUserPRs($config, $currentUser, $searchTerm).then((prs) => {
-      allUserPRs = prs;
+    getAllUserPRs($config, $currentUser).then((allPRs) => {
+      allUserPRs = allPRs;
+      initializeSearch(allUserPRs);
     });
   }
 
@@ -49,16 +56,34 @@
     }
 
     loadUser($config).then(() => {
-      loadPRs($config, $currentUser, $searchTerm, 1);
-      getAllUserPRs($config, $currentUser, $searchTerm).then((prs) => {
-        allUserPRs = prs;
+      getAllUserPRs($config, $currentUser).then((allPRs) => {
+        allUserPRs = allPRs;
+        initializeSearch(allUserPRs);
+
+        const perPage = 10;
+        const startIndex = 0;
+        const endIndex = Math.min(startIndex + perPage, allUserPRs.length);
+        const pagePRs = allUserPRs.slice(startIndex, endIndex);
+
+        prs.set(pagePRs);
+        totalPRs.set(allUserPRs.length);
+
+        const totalPagesCount = Math.ceil(allUserPRs.length / perPage);
+        totalPages.set(totalPagesCount);
+        currentPage.set(1);
       });
     });
   });
 
   // Function to handle page changes
   function handlePageChange(page: number) {
-    loadPRs($config, $currentUser, $searchTerm, page);
+    const perPage = 10;
+    const startIndex = (page - 1) * perPage;
+    const endIndex = Math.min(startIndex + perPage, filteredPRs.length);
+    const pagePRs = filteredPRs.slice(startIndex, endIndex);
+
+    prs.set(pagePRs);
+    currentPage.set(page);
   }
 
   let allPRsSelected = false;
@@ -74,16 +99,27 @@
   }
 
   let searchTimeout: ReturnType<typeof setTimeout>;
+  let filteredPRs: any[] = [];
+
   $: if (typeof window !== "undefined" && $searchTerm !== undefined) {
     clearTimeout(searchTimeout);
     searchTimeout = setTimeout(() => {
-      // Load PRs for page 1 with new search term
-      loadPRs($config, $currentUser, $searchTerm, 1);
-      // Also get all user PRs for selection logic
-      getAllUserPRs($config, $currentUser, $searchTerm).then((prs) => {
-        allUserPRs = prs;
-      });
-    }, 500);
+      if (allUserPRs.length > 0) {
+        filteredPRs = searchPRs(allUserPRs, $searchTerm);
+
+        const perPage = 10;
+        const startIndex = 0;
+        const endIndex = Math.min(startIndex + perPage, filteredPRs.length);
+        const pagePRs = filteredPRs.slice(startIndex, endIndex);
+
+        prs.set(pagePRs);
+        totalPRs.set(filteredPRs.length);
+
+        const totalPagesCount = Math.ceil(filteredPRs.length / perPage);
+        totalPages.set(totalPagesCount);
+        currentPage.set(1);
+      }
+    }, 300);
   }
 </script>
 
@@ -97,8 +133,8 @@
         {#if $prs.length > 0}
           <p class="text-sm text-gray-600 mt-1">
             {t.loaded_prs
-              .replace("{loaded}", $prs.length)
-              .replace("{total}", $totalPRs)}
+              .replace("{loaded}", String($prs.length))
+              .replace("{total}", String($totalPRs))}
           </p>
         {/if}
       </div>
@@ -157,8 +193,25 @@
       <ActionsMenu
         bind:allPRsSelected
         on:selectAll={() => prListComponent?.toggleAllPRs()}
-        on:refresh={() =>
-          loadPRs($config, $currentUser, $searchTerm, $currentPage)}
+        on:refresh={() => {
+          getAllUserPRs($config, $currentUser).then((allPRs) => {
+            allUserPRs = allPRs;
+            updateSearchIndex(allUserPRs);
+
+            filteredPRs = searchPRs(allUserPRs, $searchTerm);
+
+            const perPage = 10;
+            const startIndex = ($currentPage - 1) * perPage;
+            const endIndex = Math.min(startIndex + perPage, filteredPRs.length);
+            const pagePRs = filteredPRs.slice(startIndex, endIndex);
+
+            prs.set(pagePRs);
+            totalPRs.set(filteredPRs.length);
+
+            const totalPagesCount = Math.ceil(filteredPRs.length / perPage);
+            totalPages.set(totalPagesCount);
+          });
+        }}
         on:changeSelectedBase={() => {
           if ($selectedPRs.length > 0) {
             changeSelectedBaseModalOpen = true;
@@ -179,7 +232,7 @@
 
     <PRList
       bind:this={prListComponent}
-      onGetAllUserPRs={() => getAllUserPRs($config, $currentUser, $searchTerm)}
+      onGetAllUserPRs={() => getAllUserPRs($config, $currentUser)}
       onPageChange={handlePageChange}
     />
   </div>
@@ -187,18 +240,72 @@
 
 <ChangeSelectedBaseModal
   bind:isOpen={changeSelectedBaseModalOpen}
-  on:refresh={() => loadPRs($config, $currentUser, $searchTerm, $currentPage)}
+  on:refresh={() => {
+    getAllUserPRs($config, $currentUser).then((allPRs) => {
+      allUserPRs = allPRs;
+      updateSearchIndex(allUserPRs);
+
+      filteredPRs = searchPRs(allUserPRs, $searchTerm);
+
+      const perPage = 10;
+      const startIndex = ($currentPage - 1) * perPage;
+      const endIndex = Math.min(startIndex + perPage, filteredPRs.length);
+      const pagePRs = filteredPRs.slice(startIndex, endIndex);
+
+      prs.set(pagePRs);
+      totalPRs.set(filteredPRs.length);
+
+      const totalPagesCount = Math.ceil(filteredPRs.length / perPage);
+      totalPages.set(totalPagesCount);
+    });
+  }}
   onClose={() => (changeSelectedBaseModalOpen = false)}
 />
 
 <RemoveLabelsModal
   bind:isOpen={removeLabelsModalOpen}
-  on:refresh={() => loadPRs($config, $currentUser, $searchTerm, $currentPage)}
+  on:refresh={() => {
+    getAllUserPRs($config, $currentUser).then((allPRs) => {
+      allUserPRs = allPRs;
+      updateSearchIndex(allUserPRs);
+
+      filteredPRs = searchPRs(allUserPRs, $searchTerm);
+
+      const perPage = 10;
+      const startIndex = ($currentPage - 1) * perPage;
+      const endIndex = Math.min(startIndex + perPage, filteredPRs.length);
+      const pagePRs = filteredPRs.slice(startIndex, endIndex);
+
+      prs.set(pagePRs);
+      totalPRs.set(filteredPRs.length);
+
+      const totalPagesCount = Math.ceil(filteredPRs.length / perPage);
+      totalPages.set(totalPagesCount);
+    });
+  }}
   onClose={() => (removeLabelsModalOpen = false)}
 />
 
 <AddLabelsModal
   bind:isOpen={addLabelsModalOpen}
-  on:refresh={() => loadPRs($config, $currentUser, $searchTerm, $currentPage)}
+  on:refresh={() => {
+    getAllUserPRs($config, $currentUser).then((allPRs) => {
+      allUserPRs = allPRs;
+      updateSearchIndex(allUserPRs);
+
+      filteredPRs = searchPRs(allUserPRs, $searchTerm);
+
+      const perPage = 10;
+      const startIndex = ($currentPage - 1) * perPage;
+      const endIndex = Math.min(startIndex + perPage, filteredPRs.length);
+      const pagePRs = filteredPRs.slice(startIndex, endIndex);
+
+      prs.set(pagePRs);
+      totalPRs.set(filteredPRs.length);
+
+      const totalPagesCount = Math.ceil(filteredPRs.length / perPage);
+      totalPages.set(totalPagesCount);
+    });
+  }}
   onClose={() => (addLabelsModalOpen = false)}
 />
