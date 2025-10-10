@@ -166,6 +166,7 @@ export async function getAllUserPRs(
   }
 
   if (!currentUserValue?.login) {
+    console.error(`[getAllUserPRs] No currentUserValue.login available!`);
     return [];
   }
 
@@ -194,6 +195,7 @@ export async function getAllUserPRs(
       ); // Cache na 2 minuty
 
       const prsData = searchResult.items || [];
+
       if (prsData.length === 0) break;
 
       const prs = await Promise.all(
@@ -226,7 +228,8 @@ export async function getAllUserPRs(
       page++;
     }
 
-    return allPRs.slice(0, limit);
+    const result = allPRs.slice(0, limit);
+    return result;
   } catch (error) {
     console.error("Failed to get all user PRs:", error);
     return [];

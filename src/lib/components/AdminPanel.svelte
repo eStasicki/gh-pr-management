@@ -114,36 +114,37 @@
     };
   });
 
+  // Typ paginacji - 'server' dla server-side, 'client' dla client-side
+  let paginationType: "server" | "client" = "client";
+
   async function loadUsersWithRoles() {
     isLoading = true;
     errorMessage = "";
 
     try {
-      // Użyj server-side paginacji
-      console.log("Attempting server-side pagination...");
+      // Spróbuj server-side paginacji
       const result = await adminService.getUsersWithBanStatusPaginated(
         currentPage,
         PER_PAGE
       );
-      console.log("Server-side pagination result:", result);
 
-      displayedUsers = result.users;
-      totalUsers = result.totalCount;
-      totalPages = result.totalPages;
-
-      // Fallback do starej metody jeśli nowa nie działa
-      if (result.users.length === 0) {
-        console.warn(
-          "Server-side pagination not available, falling back to client-side"
-        );
+      if (result.users.length > 0) {
+        // Server-side paginacja działa
+        displayedUsers = result.users;
+        totalUsers = result.totalCount;
+        totalPages = result.totalPages;
+        paginationType = "server";
+      } else {
+        // Server-side nie działa, użyj client-side
+        console.warn("Server-side pagination not available, using client-side");
         await loadUsersWithRolesFallback();
+        paginationType = "client";
       }
     } catch (error) {
-      console.warn(
-        "Server-side pagination failed, falling back to client-side:",
-        error
-      );
+      // Server-side nie działa, użyj client-side
+      console.warn("Server-side pagination failed, using client-side:", error);
       await loadUsersWithRolesFallback();
+      paginationType = "client";
     } finally {
       isLoading = false;
     }
@@ -162,6 +163,12 @@
       // Ustaw paginację
       totalUsers = usersWithBanStatus.length;
       totalPages = Math.ceil(totalUsers / PER_PAGE);
+
+      // Sprawdź czy currentPage nie przekracza totalPages
+      if (currentPage > totalPages) {
+        currentPage = 1;
+      }
+
       updateDisplayedUsers();
     } catch (error) {
       errorMessage = "Błąd podczas ładowania użytkowników";
@@ -175,7 +182,15 @@
   function handlePageChange(page: number) {
     if (page >= 1 && page <= totalPages) {
       currentPage = page;
-      loadUsersWithRoles(); // Załaduj nową stronę z serwera
+
+      if (paginationType === "server") {
+        // Server-side paginacja - załaduj nową stronę z serwera
+        loadUsersWithRoles();
+      } else {
+        // Client-side paginacja - tylko zaktualizuj wyświetlane dane
+        updateDisplayedUsers();
+      }
+    } else {
     }
   }
 
@@ -214,7 +229,13 @@
 
       await adminService.setUserRole(userId, newRole);
 
-      await loadUsersWithRoles(); // Odśwież aktualną stronę
+      // Odśwież aktualną stronę
+      if (paginationType === "server") {
+        await loadUsersWithRoles();
+      } else {
+        await loadUsersWithRolesFallback();
+        updateDisplayedUsers();
+      }
 
       successMessage = `Rola użytkownika została zmieniona na ${newRole}`;
       setTimeout(() => {
@@ -243,7 +264,13 @@
   ) {
     try {
       await adminService.banUser(userId, expiresAt, reason);
-      await loadUsersWithRoles(); // Odśwież aktualną stronę
+      // Odśwież aktualną stronę
+      if (paginationType === "server") {
+        await loadUsersWithRoles();
+      } else {
+        await loadUsersWithRolesFallback();
+        updateDisplayedUsers();
+      }
       successMessage = t.ban_success;
       setTimeout(() => {
         successMessage = "";
@@ -261,7 +288,13 @@
 
     try {
       await adminService.unbanUser(userId);
-      await loadUsersWithRoles(); // Odśwież aktualną stronę
+      // Odśwież aktualną stronę
+      if (paginationType === "server") {
+        await loadUsersWithRoles();
+      } else {
+        await loadUsersWithRolesFallback();
+        updateDisplayedUsers();
+      }
       successMessage = t.unban_success;
       setTimeout(() => {
         successMessage = "";
