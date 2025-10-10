@@ -107,6 +107,8 @@ export const translations: Translations = {
     of: "z",
     results: "wyników",
     loaded_prs: "Załadowano {loaded} z {total} PR",
+    menu_toggle: "Menu",
+    close_menu: "Zamknij menu",
   },
   en: {
     config_title: "Configuration",
@@ -214,5 +216,7 @@ export const translations: Translations = {
     of: "of",
     results: "results",
     loaded_prs: "Loaded {loaded} out of {total} PRs",
+    menu_toggle: "Menu",
+    close_menu: "Close menu",
   },
 };

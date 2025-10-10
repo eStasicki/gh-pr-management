@@ -1,11 +1,14 @@
 <script lang="ts">
-  import { page } from "$app/stores";
   import { admin } from "$lib/stores";
   import { supabaseAuth, signOut } from "$lib/stores/supabaseAuth";
   import { goto } from "$app/navigation";
   import { language } from "$lib/stores/language";
   import { translations } from "$lib/translations";
   import { browser } from "$app/environment";
+  import NavLink from "./NavLink.svelte";
+
+  export let isMobile = false;
+  export let onLinkClick: (() => void) | undefined = undefined;
 
   let t = translations.pl;
 
@@ -19,40 +22,26 @@
   };
 </script>
 
-<nav class="flex gap-4">
-  <a
-    href="/dashboard"
-    class="px-4 py-2 rounded-lg transition-colors duration-200 {$page.url
-      .pathname === '/dashboard'
-      ? 'bg-blue-100 text-blue-700 font-semibold'
-      : 'text-gray-600 hover:text-gray-800 hover:bg-gray-100'}"
-  >
+<nav class={isMobile ? "flex flex-col gap-2 w-full" : "flex gap-4"}>
+  <NavLink href="/dashboard" {isMobile} {onLinkClick} isAdmin={false}>
     {t.dashboard_nav}
-  </a>
-  <a
-    href="/settings"
-    class="px-4 py-2 rounded-lg transition-colors duration-200 {$page.url
-      .pathname === '/settings'
-      ? 'bg-blue-100 text-blue-700 font-semibold'
-      : 'text-gray-600 hover:text-gray-800 hover:bg-gray-100'}"
-  >
+  </NavLink>
+
+  <NavLink href="/settings" {isMobile} {onLinkClick} isAdmin={false}>
     {t.settings_nav}
-  </a>
+  </NavLink>
+
   {#if $admin.isAdmin}
-    <a
-      href="/admin"
-      class="px-4 py-2 rounded-lg transition-colors duration-200 {$page.url
-        .pathname === '/admin'
-        ? 'bg-red-100 text-red-700 font-semibold'
-        : 'text-gray-600 hover:text-gray-800 hover:bg-gray-100'}"
-    >
+    <NavLink href="/admin" {isMobile} {onLinkClick} isAdmin={true}>
       {t.admin_nav}
-    </a>
+    </NavLink>
   {/if}
 </nav>
 <button
   on:click={handleSignOut}
-  class="px-4 py-2 bg-red-600 hover:bg-red-700 text-white font-medium rounded-lg transition duration-200"
+  class={isMobile
+    ? "w-full px-4 py-3 bg-red-600 hover:bg-red-700 text-white font-medium rounded-lg transition duration-200"
+    : "px-4 py-2 bg-red-600 hover:bg-red-700 text-white font-medium rounded-lg transition duration-200"}
 >
   {t.sign_out}
 </button>
