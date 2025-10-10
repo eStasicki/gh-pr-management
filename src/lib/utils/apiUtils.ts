@@ -67,10 +67,19 @@ export async function loadPRs(
       mockPRsGenerated = true;
     }
 
+    // Filtruj mock PR-y po tytule jeśli podano searchTerm
+    let filteredPRs = mockPRsCache;
+    if (searchTermValue.trim()) {
+      const searchLower = searchTermValue.toLowerCase();
+      filteredPRs = mockPRsCache.filter((pr) =>
+        pr.title.toLowerCase().includes(searchLower)
+      );
+    }
+
     const perPage = PER_PAGE;
     const startIndex = (page - 1) * perPage;
-    const endIndex = Math.min(startIndex + perPage, mockPRsCache.length);
-    const pagePRs = mockPRsCache.slice(startIndex, endIndex);
+    const endIndex = Math.min(startIndex + perPage, filteredPRs.length);
+    const pagePRs = filteredPRs.slice(startIndex, endIndex);
 
     const delay = Math.random() * 500 + 500;
     await new Promise((resolve) => setTimeout(resolve, delay));
@@ -78,10 +87,10 @@ export async function loadPRs(
     prs.set(pagePRs);
     isLoading.set(false);
 
-    const totalPagesCount = Math.ceil(mockPRsCache.length / perPage);
+    const totalPagesCount = Math.ceil(filteredPRs.length / perPage);
     currentPage.set(page);
     totalPages.set(totalPagesCount);
-    totalPRs.set(mockPRsCache.length);
+    totalPRs.set(filteredPRs.length);
 
     return;
   }
@@ -164,6 +173,14 @@ export async function getAllUserPRs(
       mockPRsCache = generateMockPRs(50);
       mockPRsGenerated = true;
     }
+
+    if (searchTermValue.trim()) {
+      const searchLower = searchTermValue.toLowerCase();
+      return mockPRsCache.filter((pr) =>
+        pr.title.toLowerCase().includes(searchLower)
+      );
+    }
+
     return mockPRsCache;
   }
 
