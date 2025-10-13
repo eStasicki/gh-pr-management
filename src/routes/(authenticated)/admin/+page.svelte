@@ -1,7 +1,7 @@
 <script lang="ts">
   import { onMount } from "svelte";
   import { admin, checkAdminStatus } from "$lib/stores";
-  import AdminPanel from "$lib/components/adminPanel.svelte";
+  import AdminPanel from "$lib/components/AdminPanel.svelte";
   import { browser } from "$app/environment";
 
   let isCheckingAdmin = true;
