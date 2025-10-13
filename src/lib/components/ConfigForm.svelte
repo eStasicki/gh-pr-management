@@ -129,7 +129,7 @@
         requiresVpn,
       });
 
-      // Zapisz też lokalnie jako backup
+      // Save locally as backup
       addTokenToHistory(token);
       config.set({
         token,
@@ -160,7 +160,7 @@
         successMessage = "Tryb demo został włączony - 50 przykładowych PR";
       }
 
-      // Wyczyść komunikat po 3 sekundach
+      // Clear message after 3 seconds
       setTimeout(() => {
         successMessage = "";
       }, 3000);

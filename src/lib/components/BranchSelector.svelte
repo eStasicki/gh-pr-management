@@ -76,11 +76,11 @@
   }
 
   function handleToggle() {
-    // BaseSelect zarządza swoim własnym stanem isOpen
+    // BaseSelect manages its own isOpen state
   }
 
   function handleClose() {
-    // BaseSelect zarządza swoim własnym stanem isOpen
+    // BaseSelect manages its own isOpen state
   }
 
   function handleSearchChange(term: string) {

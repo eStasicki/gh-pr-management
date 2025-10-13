@@ -1,6 +1,6 @@
 import type { GitHubPR, GitHubUser, GitHubLabel } from "$lib/types";
 
-// Przykładowi użytkownicy
+// Sample users
 const mockUsers: GitHubUser[] = [
   {
     id: 1,
@@ -39,7 +39,7 @@ const mockUsers: GitHubUser[] = [
   },
 ];
 
-// Przykładowe labele
+// Sample labels
 const mockLabels: GitHubLabel[] = [
   {
     id: 1,
@@ -118,7 +118,7 @@ const mockLabels: GitHubLabel[] = [
   },
 ];
 
-// Przykładowe tytuły PR
+// Sample PR titles
 const prTitles = [
   "Fix authentication bug in login flow",
   "Add dark mode support to dashboard",
@@ -172,7 +172,7 @@ const prTitles = [
   "Implement advanced security features",
 ];
 
-// Przykładowe base branche
+// Sample base branches
 const baseBranches = ["main", "develop", "master", "staging", "production"];
 
 // Funkcja do generowania losowej daty
@@ -183,13 +183,13 @@ function getRandomDate(start: Date, end: Date): string {
   return date.toISOString();
 }
 
-// Funkcja do losowego wyboru elementów z tablicy
+// Function to randomly select items from array
 function getRandomItems<T>(array: T[], count: number): T[] {
   const shuffled = [...array].sort(() => 0.5 - Math.random());
   return shuffled.slice(0, count);
 }
 
-// Funkcja do generowania przykładowych PR
+// Function to generate sample PRs
 export function generateMockPRs(count: number = 50): GitHubPR[] {
   const prs: GitHubPR[] = [];
   const now = new Date();
@@ -227,7 +227,7 @@ export function generateMockPRs(count: number = 50): GitHubPR[] {
   return prs;
 }
 
-// Przykładowy użytkownik dla demo
+// Sample user for demo
 export const mockCurrentUser: GitHubUser = {
   id: 1,
   login: "john_developer",
@@ -236,5 +236,5 @@ export const mockCurrentUser: GitHubUser = {
   html_url: "https://github.com/john_developer",
 };
 
-// Przykładowe labele dla demo
+// Sample labels for demo
 export { mockLabels };

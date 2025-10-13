@@ -45,7 +45,7 @@
   }
 
   // Pagination component
-  // Usunięto getTotalPages - zastąpiono przez totalPages z server-side paginacji
+  // Removed getTotalPages - replaced with totalPages from server-side pagination
 
   function getPageNumbers(
     currentPage: number,
@@ -122,26 +122,26 @@
     errorMessage = "";
 
     try {
-      // Spróbuj server-side paginacji
+      // Try server-side pagination
       const result = await adminService.getUsersWithBanStatusPaginated(
         currentPage,
         PER_PAGE
       );
 
       if (result.users.length > 0) {
-        // Server-side paginacja działa
+        // Server-side pagination works
         displayedUsers = result.users;
         totalUsers = result.totalCount;
         totalPages = result.totalPages;
         paginationType = "server";
       } else {
-        // Server-side nie działa, użyj client-side
+        // Server-side doesn't work, use client-side
         console.warn("Server-side pagination not available, using client-side");
         await loadUsersWithRolesFallback();
         paginationType = "client";
       }
     } catch (error) {
-      // Server-side nie działa, użyj client-side
+      // Server-side doesn't work, use client-side
       console.warn("Server-side pagination failed, using client-side:", error);
       await loadUsersWithRolesFallback();
       paginationType = "client";
@@ -160,11 +160,11 @@
         ban_info: null,
       }));
 
-      // Ustaw paginację
+      // Set pagination
       totalUsers = usersWithBanStatus.length;
       totalPages = Math.ceil(totalUsers / PER_PAGE);
 
-      // Sprawdź czy currentPage nie przekracza totalPages
+      // Check if currentPage doesn't exceed totalPages
       if (currentPage > totalPages) {
         currentPage = 1;
       }
@@ -184,10 +184,10 @@
       currentPage = page;
 
       if (paginationType === "server") {
-        // Server-side paginacja - załaduj nową stronę z serwera
+        // Server-side pagination - load new page from server
         loadUsersWithRoles();
       } else {
-        // Client-side paginacja - tylko zaktualizuj wyświetlane dane
+        // Client-side pagination - only update displayed data
         updateDisplayedUsers();
       }
     } else {
@@ -207,7 +207,7 @@
     closeDropdown();
   }
 
-  // Usunięto loadUsersWithBanStatus - zastąpiono przez loadUsersWithRoles z server-side paginacją
+  // Removed loadUsersWithBanStatus - replaced with loadUsersWithRoles with server-side pagination
 
   async function toggleUserRole(
     userId: string,
@@ -216,7 +216,7 @@
     try {
       const newRole = currentRole === "admin" ? "user" : "admin";
 
-      // Sprawdź czy próbuje usunąć admina z twórcy aplikacji
+      // Check if trying to remove admin from app creator
       const user = usersWithBanStatus.find((u) => u.id === userId);
       if (newRole === "user" && user?.email === "estasicki@gmail.com") {
         errorMessage =
@@ -229,7 +229,7 @@
 
       await adminService.setUserRole(userId, newRole);
 
-      // Odśwież aktualną stronę
+      // Refresh current page
       if (paginationType === "server") {
         await loadUsersWithRoles();
       } else {
@@ -264,7 +264,7 @@
   ) {
     try {
       await adminService.banUser(userId, expiresAt, reason);
-      // Odśwież aktualną stronę
+      // Refresh current page
       if (paginationType === "server") {
         await loadUsersWithRoles();
       } else {
@@ -288,7 +288,7 @@
 
     try {
       await adminService.unbanUser(userId);
-      // Odśwież aktualną stronę
+      // Refresh current page
       if (paginationType === "server") {
         await loadUsersWithRoles();
       } else {

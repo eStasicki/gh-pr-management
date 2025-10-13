@@ -27,7 +27,7 @@ export interface UserWithBanStatus {
 }
 
 export const adminService = {
-  // Sprawdź czy aktualny użytkownik jest administratorem
+  // Check if current user is administrator
   async isCurrentUserAdmin(): Promise<boolean> {
     try {
       const { data, error } = await supabase.rpc("is_admin");
@@ -58,7 +58,7 @@ export const adminService = {
     }
   },
 
-  // Pobierz wszystkie role użytkowników (tylko dla adminów)
+  // Get all user roles (admin only)
   async getAllUserRoles(): Promise<UserRole[]> {
     try {
       const { data, error } = await supabase
@@ -76,10 +76,10 @@ export const adminService = {
     }
   },
 
-  // Ustaw rolę użytkownika (tylko dla adminów)
+  // Set user role (admin only)
   async setUserRole(userId: string, role: "user" | "admin"): Promise<void> {
     try {
-      // Sprawdź czy próbuje usunąć admina z twórcy aplikacji
+      // Check if trying to remove admin from app creator
       if (role === "user") {
         const { data: userData } = await supabase
           .from("auth.users")
@@ -108,7 +108,7 @@ export const adminService = {
     }
   },
 
-  // Usuń rolę użytkownika (tylko dla adminów)
+  // Remove user role (admin only)
   async removeUserRole(userId: string): Promise<void> {
     try {
       const { error } = await supabase
@@ -124,7 +124,7 @@ export const adminService = {
     }
   },
 
-  // Pobierz informacje o użytkownikach z ich rolami
+  // Get user information with their roles
   async getUsersWithRoles(): Promise<
     Array<{
       id: string;
@@ -134,7 +134,7 @@ export const adminService = {
     }>
   > {
     try {
-      // Użyj funkcji SQL do pobrania użytkowników z rolami i emailami
+      // Use SQL function to get users with roles and emails
       const { data, error } = await supabase.rpc(
         "get_users_with_roles_and_emails"
       );
@@ -156,7 +156,7 @@ export const adminService = {
     }
   },
 
-  // Sprawdź czy użytkownik jest zbanowany
+  // Check if user is banned
   async isUserBanned(userId: string): Promise<boolean> {
     try {
       const { data, error } = await supabase.rpc("is_user_banned", {
@@ -175,7 +175,7 @@ export const adminService = {
     }
   },
 
-  // Zbanuj użytkownika
+  // Ban user
   async banUser(
     userId: string,
     expiresAt: string | null,
@@ -199,7 +199,7 @@ export const adminService = {
     }
   },
 
-  // Odbanuj użytkownika
+  // Unban user
   async unbanUser(userId: string): Promise<void> {
     try {
       const { error } = await supabase.rpc("unban_user", {
@@ -217,7 +217,7 @@ export const adminService = {
     }
   },
 
-  // Pobierz użytkowników z informacjami o banach (z paginacją)
+  // Get users with ban information (with pagination)
   async getUsersWithBanStatusPaginated(
     page: number = 1,
     pageSize: number = 10

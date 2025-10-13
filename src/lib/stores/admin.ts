@@ -23,7 +23,7 @@ export async function checkAdminStatus(force = false): Promise<boolean> {
   const currentState = admin;
   const timeSinceLastCheck = Date.now() - currentState.lastChecked;
 
-  // Sprawdź ponownie tylko jeśli wymuszone lub minęło 5 minut
+  // Check again only if forced or 5 minutes have passed
   if (!force && timeSinceLastCheck < 5 * 60 * 1000) {
     return currentState.isAdmin;
   }
@@ -56,14 +56,14 @@ export async function checkAdminStatus(force = false): Promise<boolean> {
   }
 }
 
-// Funkcja do odświeżenia statusu administratora
+// Function to refresh admin status
 export async function refreshAdminStatus(): Promise<boolean> {
   return await checkAdminStatus(true);
 }
 
 // Inicjalizacja przy starcie aplikacji
 if (browser) {
-  // Sprawdź status administratora po 1 sekundzie (żeby auth się załadował)
+  // Check admin status after 1 second (so auth loads)
   setTimeout(() => {
     checkAdminStatus();
   }, 1000);

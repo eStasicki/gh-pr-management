@@ -173,7 +173,7 @@ export async function getAllUserPRs(
   try {
     const allPRs = [];
     let page = 1;
-    const perPage = Math.min(limit, 100); // Maksymalnie 100 na stronę
+    const perPage = Math.min(limit, 100); // Maximum 100 per page
     const maxPages = Math.ceil(limit / perPage);
 
     while (page <= maxPages) {

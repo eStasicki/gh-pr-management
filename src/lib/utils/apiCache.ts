@@ -20,7 +20,7 @@ class GitHubAPICache {
     used: 0,
   };
   private readonly DEFAULT_TTL = 5 * 60 * 1000; // 5 minut
-  private readonly RATE_LIMIT_BUFFER = 10; // Zostaw 10 requestów jako bufor
+  private readonly RATE_LIMIT_BUFFER = 10; // Leave 10 requests as buffer
 
   private getCacheKey(endpoint: string, params?: Record<string, any>): string {
     const paramString = params ? JSON.stringify(params) : "";

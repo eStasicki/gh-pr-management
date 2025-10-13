@@ -40,7 +40,7 @@ export const settingsService = {
     if (!data) return null;
 
     try {
-      // Deszyfruj wszystkie wrażliwe pola
+      // Decrypt all sensitive fields
       const decryptedToken = await decryptGitHubToken(
         data.github_token,
         user.id
@@ -54,7 +54,7 @@ export const settingsService = {
         ? await decryptSensitiveData(data.enterprise_url, user.id)
         : "";
 
-      // Sprawdź czy potrzebna jest migracja (czy któreś z pól nie jest zaszyfrowane)
+      // Check if migration is needed (if any field is not encrypted)
       const needsMigration =
         !data.github_token.startsWith("encrypted:") ||
         !data.repo_owner.startsWith("encrypted:") ||
@@ -62,7 +62,7 @@ export const settingsService = {
         (data.enterprise_url && !data.enterprise_url.startsWith("encrypted:"));
 
       if (needsMigration) {
-        // Zaszyfruj wszystkie pola i zaktualizuj bazę
+        // Encrypt all fields and update database
         const encryptedToken = await encryptGitHubToken(
           decryptedToken,
           user.id
@@ -118,7 +118,7 @@ export const settingsService = {
     if (!user) throw new Error("User not authenticated");
 
     try {
-      // Zaszyfruj wszystkie wrażliwe pola
+      // Encrypt all sensitive fields
       const encryptedToken = await encryptGitHubToken(
         settings.github_token,
         user.id
@@ -143,7 +143,7 @@ export const settingsService = {
         enterprise_url: encryptedEnterpriseUrl,
       };
 
-      // Najpierw sprawdź czy ustawienia już istnieją (bezpośrednie zapytanie)
+      // First check if settings already exist (direct query)
       const { data: existingData } = await supabase
         .from("user_settings")
         .select("id")
@@ -151,7 +151,7 @@ export const settingsService = {
         .single();
 
       if (existingData) {
-        // Aktualizuj istniejące ustawienia
+        // Update existing settings
         const { data, error } = await supabase
           .from("user_settings")
           .update({
@@ -178,7 +178,7 @@ export const settingsService = {
           enterprise_url: settings.enterprise_url,
         };
       } else {
-        // Utwórz nowe ustawienia
+        // Create new settings
         const { data, error } = await supabase
           .from("user_settings")
           .insert({

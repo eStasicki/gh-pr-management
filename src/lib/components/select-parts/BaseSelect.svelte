@@ -37,10 +37,10 @@
   export let isLoading = false;
   export let error = "";
   export let onRetry: () => void = () => {};
-  export let emptyMessage = "Brak elementów";
-  export let noResultsMessage = "Nie znaleziono wyników";
-  export let loadingMessage = "Ładowanie...";
-  export let tryAgainText = "Spróbuj ponownie";
+  export let emptyMessage = "No items";
+  export let noResultsMessage = "No results found";
+  export let loadingMessage = "Loading...";
+  export let tryAgainText = "Try again";
 
   let isOpen = false;
 
@@ -274,7 +274,7 @@
         </div>
       {:else}
         <div class="p-4 text-center text-gray-500">
-          <p>Brak danych w slotItems: {JSON.stringify(slotItems)}</p>
+          <p>No data in slotItems: {JSON.stringify(slotItems)}</p>
         </div>
       {/if}
     </div>
