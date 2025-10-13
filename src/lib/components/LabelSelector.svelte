@@ -10,7 +10,7 @@
     loadLabels,
   } from "$lib/stores";
   import { createArrayToggleHandler } from "$lib/utils/arrayUtils";
-  import BaseSelect from "./select-parts/BaseSelect.svelte";
+  import BaseSelect from "./baseSelect/baseSelect.svelte";
 
   export let selectedLabels: string[] = [];
   export let onLabelsChange: (labels: string[]) => void = () => {};

@@ -1,10 +1,10 @@
 <script lang="ts">
   import "../../app.css";
-  import LanguageSwitcher from "$lib/components/LanguageSwitcher.svelte";
-  import Navigation from "$lib/components/Navigation.svelte";
-  import MobileNavigationModal from "$lib/components/modals/MobileNavigationModal.svelte";
-  import ConnectionLostModal from "$lib/components/modals/ConnectionLostModal.svelte";
-  import BannedUserModal from "$lib/components/modals/BannedUserModal.svelte";
+  import LanguageSwitcher from "$lib/components/languageSwitcher.svelte";
+  import Navigation from "$lib/components/navigation.svelte";
+  import MobileNavigationModal from "$lib/components/modal/internal/modals/mobileNavigationModal.svelte";
+  import ConnectionLostModal from "$lib/components/modal/internal/modals/connectionLostModal.svelte";
+  import BannedUserModal from "$lib/components/modal/internal/modals/bannedUserModal.svelte";
   import { auth } from "$lib/stores";
   import { initializeAuth, supabaseAuth } from "$lib/stores/supabaseAuth";
   import { language } from "$lib/stores/language";

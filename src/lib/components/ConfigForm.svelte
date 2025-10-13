@@ -14,7 +14,7 @@
   import { browser } from "$app/environment";
   import { onMount } from "svelte";
   import { get } from "svelte/store";
-  import ConnectionLostModal from "./modals/ConnectionLostModal.svelte";
+  import ConnectionLostModal from "./modal/internal/modals/connectionLostModal.svelte";
   import {
     createDropdownHandlers,
     createClickOutsideHandlerWithSelector,

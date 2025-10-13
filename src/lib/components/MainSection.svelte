@@ -13,11 +13,11 @@
   import { language } from "$lib/stores/language";
   import { translations } from "$lib/translations";
   import { browser } from "$app/environment";
-  import PRList from "./pr-list/PRList.svelte";
-  import ChangeSelectedBaseModal from "./modals/ChangeSelectedBaseModal.svelte";
-  import RemoveLabelsModal from "./modals/RemoveLabelsModal.svelte";
-  import AddLabelsModal from "./modals/AddLabelsModal.svelte";
-  import ActionsMenu from "./ActionsMenu.svelte";
+  import PRList from "./prList/internal/prList.svelte";
+  import ChangeSelectedBaseModal from "./modal/internal/modals/changeSelectedBaseModal.svelte";
+  import RemoveLabelsModal from "./modal/internal/modals/removeLabelsModal.svelte";
+  import AddLabelsModal from "./modal/internal/modals/addLabelsModal.svelte";
+  import ActionsMenu from "./actionsMenu/actionsMenu.svelte";
   import { loadUser, loadPRs, getAllUserPRs } from "$lib/utils/apiUtils";
   import { createPRSelectionHandlers } from "$lib/utils/prUtils";
   import { isDemoMode } from "$lib/utils/demoMode";

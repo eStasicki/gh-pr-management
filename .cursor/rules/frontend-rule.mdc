@@ -19,6 +19,7 @@ alwaysApply: true
 - Do obsługi globalnego stanu wykorzystuj Svelte stores.
 - Prefiksuj event handlery słowem `handle` (`handleClick`, `handleSubmit`).
 - Wszelkie komentarze w kodzie pisz po angielsku.
+- Wszystkie nazwy plików oraz katalogów pisz po angielsku oraz w systemie camelCase.
 
 ## Struktura plików
 

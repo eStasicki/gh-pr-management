@@ -4,7 +4,7 @@
   import { language } from "$lib/stores/language";
   import { translations } from "$lib/translations";
   import { browser } from "$app/environment";
-  import BaseSelect from "./select-parts/BaseSelect.svelte";
+  import BaseSelect from "./baseSelect/baseSelect.svelte";
 
   export let selectedBranch = "";
   export let onBranchSelect: (branch: string) => void = () => {};

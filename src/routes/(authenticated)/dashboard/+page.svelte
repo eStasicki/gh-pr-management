@@ -1,5 +1,5 @@
 <script lang="ts">
-  import MainSection from "$lib/components/MainSection.svelte";
+  import MainSection from "$lib/components/mainSection.svelte";
 </script>
 
 <svelte:head>

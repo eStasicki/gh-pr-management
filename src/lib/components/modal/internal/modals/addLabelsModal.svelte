@@ -4,12 +4,12 @@
   import { browser } from "$app/environment";
   import { githubAPI } from "$lib/services/github-api";
   import { selectedPRs, updatePRs, prs, refreshLabels } from "$lib/stores";
-  import Modal from "../Modal.svelte";
-  import LabelSelector from "../LabelSelector.svelte";
-  import SelectedPRsList from "../modal-parts/SelectedPRsList.svelte";
-  import ProcessingState from "../modal-parts/ProcessingState.svelte";
-  import ResultsList from "../modal-parts/ResultsList.svelte";
-  import ModalFooter from "../modal-parts/ModalFooter.svelte";
+  import Modal from "../../modal.svelte";
+  import LabelSelector from "../../../labelSelector.svelte";
+  import SelectedPRsList from "../selectedPRsList.svelte";
+  import ProcessingState from "../processingState.svelte";
+  import ResultsList from "../resultsList.svelte";
+  import ModalFooter from "../modalFooter.svelte";
 
   export let isOpen = false;
   export let onClose: () => void;

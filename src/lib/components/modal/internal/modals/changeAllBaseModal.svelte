@@ -2,8 +2,8 @@
   import { language } from "$lib/stores/language";
   import { translations } from "$lib/translations";
   import { browser } from "$app/environment";
-  import Modal from "../Modal.svelte";
-  import ModalFooter from "../modal-parts/ModalFooter.svelte";
+  import Modal from "../../modal.svelte";
+  import ModalFooter from "../modalFooter.svelte";
 
   export let isOpen = false;
   export let onClose: () => void;
