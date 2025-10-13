@@ -1,0 +1,26 @@
+---
+description: "Commit message rules for all changes"
+alwaysApply: true
+---
+
+# Commit message conventions
+
+- Zawsze używaj Conventional Commits:
+- feat: opis zmiany
+- fix: poprawka błędu API
+- docs: aktualizacja dokumentacji
+- refactor: refaktoryzacja narzędzi
+- style: stylizacja builder-oem
+- test: test jednostkowy
+- chore: aktualizacja zależności
+- Komentarz nie dłuższy niż 40 znaki.
+
+Przykłady commitów:
+
+feat: Add new feature
+fix: Fix API bug
+docs: Update README
+refactor: Refactor utility functions
+style(tailwind): Style Tailwind components
+test: Add unit tests
+chore: Update dependencies

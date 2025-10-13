@@ -1,0 +1,96 @@
+---
+description: "Core frontend guidelines for this project"
+globs:
+  - "**/src/*.ts"
+  - "**/src/*.svelte"
+  - "**/src/*.js"
+alwaysApply: true
+---
+
+# SvelteKit + TypeScript Rules
+
+## Ogólne konwencje
+
+- Korzystaj ze strict typowania w TypeScript i preferuj type'y do propsów.
+- Nazwy komponentów w formacie PascalCase, np. `ProductCard.svelte`.
+- Wspólne komponenty trzymaj w `{currentDirSrc}/internal/{subComponentName}`, type'y w `{currentDirSrc}/internal/types.ts`, funkcje pomocnicze w `{currentDirSrc}/internal/utils.ts`.
+- Każdy komponent .svelte inicjuj tagiem `<script lang="ts">`.
+- Stosuj TailwindCSS w class'ach zamiast tradycyjnych stylów.
+- Do obsługi globalnego stanu wykorzystuj Svelte stores.
+- Prefiksuj event handlery słowem `handle` (`handleClick`, `handleSubmit`).
+
+## Struktura plików
+
+- Imports, typy, stałe, zmienne, funkcje, komponenty — zachowuj kolejność w plikach.
+- Akcje formularzy implementuj jako form actions SvelteKit.
+- Wykorzystuj funkcję `load` do SSR oraz pobierania danych na serwerze.
+
+## Stylistyczne
+
+- Preferuj const zamiast function, jeśli nie wymaga tego składnia.
+- Zawsze korzystaj z descriptive variable names.
+- Zaimplementuj accessibility (np. `aria-label`, `tabindex`, role w interfejsie).
+- Używaj `class:` w Svelte, zamiast ternary, minimalizując złożoność styli - ale tylko wtedy kiedy jest to mozliwe,
+- W komponentach które mają zbyt dużą ilość stylów mozesz uzyc `twMerge` z `tailwind-merge` aby uprościć kod.
+
+## Dobre praktyki
+
+- DRY: nie powielaj logiki, korzystaj z utils i helperów.
+- Proponuj w kodzie early returns dla czytelności.
+- W plikach TypeScript główne eksporty umiejść na początku.
+- Staraj się nie modyfikować komponentów QDS jeśli to nie jest wymagane.
+- Zabezpieczaj kod przed błędami typu `null` lub `undefined` poprzez użycie `?.` lub `??`.
+
+## Przykład prop types
+
+```ts
+export type ProductCardProps = {
+  name: string;
+  description: string;
+  price: number;
+};
+```
+
+## Applies general coding principles like simplicity, readability, performance, maintainability, testability, and reusability to all files.
+
+- Focus on simplicity, readability, performance, maintainability, testability, and reusability.
+- Remember less code is better.
+- Lines of code = Debt.
+
+## Remember the following important mindset when providing code:
+
+- Simplicity
+- Readability
+- Performance
+- Maintainability
+- Testability
+- Reusability
+
+## Outlines the principles of Svelte component design, including single responsibility, reusability, props for configuration, and slots for composition. This helps developers create flexible and well-designed components.
+
+- Component Design
+- Follow the single responsibility principle
+- Create small, reusable components
+- Use props for component configuration
+- Utilize Svelte's slot system for flexible component composition
+
+## Defines the state management approach in Svelte, recommending Svelte stores for global state. It promotes using the '$' prefix and reactive declarations and statements.
+
+- State Management
+  - Use Svelte stores for global state:
+    typescript
+    import { writable } from 'svelte/store';
+    export const myStore = writable(initialValue);
+  - Access store values in components with the $ prefix:
+    svelte
+    <p>{$myStore}</p>
+- Reactivity
+  - Use reactive declarations for derived values:
+    svelte
+    $: derivedValue = someValue \* 2;
+  - Use reactive statements for side effects:
+    svelte
+    $: {
+    console.log(someValue);
+    updateSomething(someValue);
+    }
