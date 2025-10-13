@@ -38,7 +38,7 @@ async function validateAuth(force = false) {
     return;
   }
 
-  // Jeśli requiresVpn jest false, pomiń walidację połączenia z VPN
+  // If requiresVpn is false, skip VPN connection validation
   if (!requiresVpn) {
     auth.set({
       isLoggedIn: true,
@@ -100,7 +100,7 @@ function setupApiErrorHandling() {
         const currentState = get(auth);
         const currentConfig = get(config);
 
-        // Sprawdź czy requiresVpn jest włączone przed pokazaniem modala
+        // Check if requiresVpn is enabled before showing modal
         if (currentState.isLoggedIn && currentConfig.requiresVpn) {
           auth.update((state) => ({
             ...state,
@@ -117,7 +117,7 @@ function setupApiErrorHandling() {
       const currentState = get(auth);
       const currentConfig = get(config);
 
-      // Sprawdź czy requiresVpn jest włączone przed pokazaniem modala
+      // Check if requiresVpn is enabled before showing modal
       if (currentState.isLoggedIn && currentConfig.requiresVpn) {
         auth.update((state) => ({
           ...state,
@@ -142,7 +142,7 @@ function startConnectionMonitoring() {
   window.addEventListener("offline", () => {
     const currentConfig = get(config);
 
-    // Sprawdź czy requiresVpn jest włączone przed pokazaniem modala
+    // Check if requiresVpn is enabled before showing modal
     if (currentConfig.requiresVpn) {
       auth.update((state) => ({
         ...state,

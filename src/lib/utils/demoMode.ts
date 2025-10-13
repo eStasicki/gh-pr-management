@@ -24,7 +24,7 @@ export async function enableDemoMode() {
     mockPRsGenerated = true;
   }
 
-  // Ustaw pierwsze 10 PR-ów jako wyświetlane
+  // Set first 10 PRs as displayed
   const perPage = 10;
   const startIndex = 0;
   const endIndex = Math.min(startIndex + perPage, mockPRsCache.length);
@@ -70,7 +70,7 @@ export function isDemoMode(): boolean {
   const user = get(currentUser);
   const currentConfig = get(config);
 
-  // Sprawdź czy mamy przykładowego użytkownika LUB czy demo_mode jest włączone w konfiguracji
+  // Check if we have sample user OR if demo_mode is enabled in config
   return (
     user?.login === mockCurrentUser.login || currentConfig.demoMode === true
   );

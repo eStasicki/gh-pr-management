@@ -46,7 +46,7 @@
 
   onMount(() => {
     updateCacheInfo();
-    interval = setInterval(updateCacheInfo, 5000); // Odśwież co 5 sekund
+    interval = setInterval(updateCacheInfo, 5000); // Refresh every 5 seconds
   });
 
   onDestroy(() => {

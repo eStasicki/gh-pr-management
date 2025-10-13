@@ -18,6 +18,7 @@ alwaysApply: true
 - Stosuj TailwindCSS w class'ach zamiast tradycyjnych stylów.
 - Do obsługi globalnego stanu wykorzystuj Svelte stores.
 - Prefiksuj event handlery słowem `handle` (`handleClick`, `handleSubmit`).
+- Wszelkie komentarze w kodzie pisz po angielsku.
 
 ## Struktura plików
 

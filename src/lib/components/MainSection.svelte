@@ -36,9 +36,9 @@
   let allUserPRs: any[] = [];
   let searchTimeout: ReturnType<typeof setTimeout>;
   let filteredPRs: any[] = [];
-  let hasLoaded = false; // Flaga żeby uniknąć wielokrotnego ładowania
-  let lastDemoMode = false; // Śledź poprzedni stan trybu demo
-  let lastSearchTerm = ""; // Śledź poprzedni termin wyszukiwania
+  let hasLoaded = false; // Flag to avoid multiple loading
+  let lastDemoMode = false; // Track previous demo mode state
+  let lastSearchTerm = ""; // Track previous search term
 
   $: if (browser) {
     t = translations[$language];
@@ -55,13 +55,13 @@
     });
   }
 
-  // Reactive statement - wykonuje się gdy $config się zmieni
+  // Reactive statement - executes when $config changes
   $: if (
     $config.token &&
     !isDemoMode() &&
     (!hasLoaded || lastDemoMode !== isDemoMode())
   ) {
-    hasLoaded = true; // Ustaw flagę żeby uniknąć ponownego ładowania
+    hasLoaded = true; // Set flag to avoid reloading
     lastDemoMode = isDemoMode();
 
     loadUser($config)
@@ -98,7 +98,7 @@
       .catch((error) => {
         console.error(`[MainSection] Error loading user:`, error);
 
-        // Jeśli błąd 401 (Unauthorized), włącz tryb demo jako fallback
+        // If 401 error (Unauthorized), enable demo mode as fallback
         if (
           error.message?.includes("401") ||
           error.message?.includes("Unauthorized")
@@ -115,10 +115,10 @@
     hasLoaded = true;
     lastDemoMode = isDemoMode();
 
-    // W trybie demo dane są już załadowane przez enableDemoMode
-    // Musimy zainicjalizować filteredPRs z wszystkimi mock PR-ami
+    // In demo mode data is already loaded by enableDemoMode
+    // We need to initialize filteredPRs with all mock PRs
     if ($prs.length > 0) {
-      // Pobierz wszystkie mock PR-y z getAllUserPRs
+      // Get all mock PRs from getAllUserPRs
       getAllUserPRs($config, $currentUser, 50).then((allPRs) => {
         allUserPRs = allPRs;
         filteredPRs = allPRs;
@@ -130,7 +130,7 @@
   // onMount tylko dla trybu demo
   onMount(() => {
     if (isDemoMode()) {
-      // Tryb demo jest już obsługiwany przez reactive statement z $config
+      // Demo mode is already handled by reactive statement with $config
     }
   });
 
@@ -197,7 +197,7 @@
     $searchTerm === "" &&
     lastSearchTerm !== ""
   ) {
-    // Gdy searchTerm jest pusty, pokaż wszystkie PR-y
+    // When searchTerm is empty, show all PRs
     lastSearchTerm = "";
 
     if (allUserPRs.length > 0) {
@@ -298,7 +298,7 @@
             const totalPagesCount = Math.ceil(filteredPRs.length / perPage);
             totalPages.set(totalPagesCount);
 
-            // Sprawdź czy currentPage nie przekracza totalPages
+            // Check if currentPage doesn't exceed totalPages
             if ($currentPage > totalPagesCount) {
               currentPage.set(1);
             }
@@ -350,7 +350,7 @@
       const totalPagesCount = Math.ceil(filteredPRs.length / perPage);
       totalPages.set(totalPagesCount);
 
-      // Sprawdź czy currentPage nie przekracza totalPages
+      // Check if currentPage doesn't exceed totalPages
       if ($currentPage > totalPagesCount) {
         currentPage.set(1);
       }
@@ -379,7 +379,7 @@
       const totalPagesCount = Math.ceil(filteredPRs.length / perPage);
       totalPages.set(totalPagesCount);
 
-      // Sprawdź czy currentPage nie przekracza totalPages
+      // Check if currentPage doesn't exceed totalPages
       if ($currentPage > totalPagesCount) {
         currentPage.set(1);
       }
@@ -408,7 +408,7 @@
       const totalPagesCount = Math.ceil(filteredPRs.length / perPage);
       totalPages.set(totalPagesCount);
 
-      // Sprawdź czy currentPage nie przekracza totalPages
+      // Check if currentPage doesn't exceed totalPages
       if ($currentPage > totalPagesCount) {
         currentPage.set(1);
       }
