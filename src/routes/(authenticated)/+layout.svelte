@@ -1,7 +1,7 @@
 <script lang="ts">
   import "../../app.css";
   import LanguageSwitcher from "$lib/components/LanguageSwitcher.svelte";
-  import Navigation from "$lib/components/navigation.svelte";
+  import Navigation from "$lib/components/Navigation.svelte";
   import MobileNavigationModal from "$lib/components/modal/internal/modals/mobileNavigationModal.svelte";
   import ConnectionLostModal from "$lib/components/modal/internal/modals/connectionLostModal.svelte";
   import BannedUserModal from "$lib/components/modal/internal/modals/bannedUserModal.svelte";
