@@ -5,7 +5,7 @@
   import { githubAPI } from "$lib/services/github-api";
   import { selectedPRs, updatePRs, prs, refreshLabels } from "$lib/stores";
   import Modal from "../../modal.svelte";
-  import LabelSelector from "../../../labelSelector.svelte";
+  import LabelSelector from "../../../LabelSelector.svelte";
   import SelectedPRsList from "../selectedPRsList.svelte";
   import ProcessingState from "../processingState.svelte";
   import ResultsList from "../resultsList.svelte";

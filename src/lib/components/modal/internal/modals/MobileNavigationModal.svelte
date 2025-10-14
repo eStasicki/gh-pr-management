@@ -4,7 +4,7 @@
   import { language } from "$lib/stores/language";
   import { translations } from "$lib/translations";
   import { browser } from "$app/environment";
-  import Navigation from "../../../navigation.svelte";
+  import Navigation from "../../../Navigation.svelte";
 
   export let isOpen = false;
   export let onClose: () => void;

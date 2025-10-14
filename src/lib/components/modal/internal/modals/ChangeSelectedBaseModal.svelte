@@ -11,8 +11,8 @@
     refreshLabels,
   } from "$lib/stores";
   import Modal from "../../modal.svelte";
-  import BranchSelector from "../../../branchSelector.svelte";
-  import LabelSelector from "../../../labelSelector.svelte";
+  import BranchSelector from "../../../BranchSelector.svelte";
+  import LabelSelector from "../../../LabelSelector.svelte";
   import SelectedPRsList from "../selectedPRsList.svelte";
   import ProcessingState from "../processingState.svelte";
   import ResultsList from "../resultsList.svelte";
