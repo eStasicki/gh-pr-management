@@ -22,6 +22,106 @@ BEGIN
 END;
 $$ LANGUAGE plpgsql SECURITY DEFINER;
 
+-- Drop existing functions if they exist
+DROP FUNCTION IF EXISTS get_users_with_ban_status_paginated(INTEGER, INTEGER);
+DROP FUNCTION IF EXISTS get_all_users(TEXT, INTEGER, INTEGER);
+
+-- Test function to check if we have users
+CREATE OR REPLACE FUNCTION test_get_users()
+RETURNS TABLE (
+  user_count INTEGER,
+  sample_users JSON
+) AS $$
+DECLARE
+  total_count INTEGER;
+BEGIN
+  -- Get total count
+  SELECT COUNT(*) INTO total_count FROM auth.users;
+  
+  -- Return sample users
+  RETURN QUERY
+  SELECT 
+    total_count as user_count,
+    COALESCE(
+      json_agg(
+        json_build_object(
+          'id', u.id,
+          'email', u.email,
+          'created_at', u.created_at
+        ) ORDER BY u.created_at DESC
+      ),
+      '[]'::json
+    ) as sample_users
+  FROM (
+    SELECT u.id, u.email, u.created_at
+    FROM auth.users u 
+    ORDER BY u.created_at DESC
+    LIMIT 5
+  ) u;
+END;
+$$ LANGUAGE plpgsql SECURITY DEFINER;
+
+-- Simple function to get all users with ban status and pagination
+CREATE OR REPLACE FUNCTION get_all_users(
+  filter_type TEXT DEFAULT 'all',
+  page_number INTEGER DEFAULT 1,
+  page_size INTEGER DEFAULT 10
+)
+RETURNS TABLE (
+  users JSON,
+  total_count INTEGER
+) AS $$
+DECLARE
+  offset_value INTEGER;
+  total_users INTEGER;
+BEGIN
+  -- Calculate offset
+  offset_value := (page_number - 1) * page_size;
+  
+  -- Get total count
+  SELECT COUNT(*) INTO total_users FROM auth.users;
+  
+  -- Return all users with ban status and roles
+  RETURN QUERY
+  SELECT 
+    COALESCE(
+      (
+        SELECT json_agg(
+          json_build_object(
+            'id', u.id,
+            'email', u.email,
+            'created_at', u.created_at,
+            'role', COALESCE(ur.role, 'user'),
+            'is_banned', CASE WHEN bu.user_id IS NOT NULL THEN true ELSE false END,
+            'ban_info', CASE 
+              WHEN bu.user_id IS NOT NULL THEN
+                json_build_object(
+                  'id', bu.id,
+                  'user_id', bu.user_id,
+                  'banned_by', bu.banned_by,
+                  'banned_at', bu.banned_at,
+                  'ban_expires_at', bu.ban_expires_at,
+                  'reason', bu.reason
+                )
+              ELSE NULL
+            END
+          )
+        )
+        FROM (
+          SELECT u.id, u.email, u.created_at
+          FROM auth.users u 
+          ORDER BY u.created_at DESC
+          LIMIT page_size OFFSET offset_value
+        ) u
+        LEFT JOIN user_roles ur ON u.id = ur.user_id
+        LEFT JOIN banned_users bu ON u.id = bu.user_id
+      ),
+      '[]'::json
+    ) as users,
+    total_users as total_count;
+END;
+$$ LANGUAGE plpgsql SECURITY DEFINER;
+
 -- Function to bulk delete users with validation
 CREATE OR REPLACE FUNCTION bulk_delete_users(target_user_ids UUID[])
 RETURNS JSON AS $$
@@ -120,7 +220,46 @@ BEGIN
 END;
 $$ LANGUAGE plpgsql SECURITY DEFINER;
 
+-- Function to check if user is banned
+CREATE OR REPLACE FUNCTION is_user_banned(user_uuid UUID)
+RETURNS BOOLEAN AS $$
+BEGIN
+  RETURN EXISTS(
+    SELECT 1 FROM banned_users 
+    WHERE user_id = user_uuid
+  );
+END;
+$$ LANGUAGE plpgsql SECURITY DEFINER;
+
+-- Function to get ban info for a user
+CREATE OR REPLACE FUNCTION get_user_ban_info(user_uuid UUID)
+RETURNS TABLE (
+  id UUID,
+  user_id UUID,
+  banned_by TEXT,
+  banned_at TIMESTAMP WITH TIME ZONE,
+  ban_expires_at TIMESTAMP WITH TIME ZONE,
+  reason TEXT
+) AS $$
+BEGIN
+  RETURN QUERY
+  SELECT 
+    bu.id,
+    bu.user_id,
+    bu.banned_by,
+    bu.banned_at,
+    bu.ban_expires_at,
+    bu.reason
+  FROM banned_users bu
+  WHERE bu.user_id = user_uuid;
+END;
+$$ LANGUAGE plpgsql SECURITY DEFINER;
+
 -- Grant execute permissions to authenticated users
 GRANT EXECUTE ON FUNCTION get_users_with_roles_and_emails() TO authenticated;
+GRANT EXECUTE ON FUNCTION test_get_users() TO authenticated;
+GRANT EXECUTE ON FUNCTION get_all_users(TEXT, INTEGER, INTEGER) TO authenticated;
 GRANT EXECUTE ON FUNCTION bulk_delete_users(UUID[]) TO authenticated;
 GRANT EXECUTE ON FUNCTION bulk_ban_users(UUID[], TIMESTAMP, TEXT) TO authenticated;
+GRANT EXECUTE ON FUNCTION is_user_banned(UUID) TO authenticated;
+GRANT EXECUTE ON FUNCTION get_user_ban_info(UUID) TO authenticated;

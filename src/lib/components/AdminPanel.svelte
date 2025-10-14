@@ -118,7 +118,7 @@
 
     // Load all users for bulk operations
     adminService
-      .getUsersWithBanStatusPaginated(1, 1000)
+      .getAllUsers("all", 1, 1000)
       .then((result) => {
         allUsers = result.users;
       })
@@ -150,7 +150,8 @@
 
     try {
       // Try server-side pagination
-      const result = await adminService.getUsersWithBanStatusPaginated(
+      const result = await adminService.getAllUsers(
+        "all",
         currentPage,
         PER_PAGE
       );
@@ -158,18 +159,18 @@
       if (result.users.length > 0) {
         // Server-side pagination works
         displayedUsers = result.users;
+        usersWithBanStatus = [...result.users];
+        allUsers = [...result.users];
         totalUsers = result.totalCount;
         totalPages = result.totalPages;
         paginationType = "server";
       } else {
         // Server-side doesn't work, use client-side
-        console.warn("Server-side pagination not available, using client-side");
         await loadUsersWithRolesFallback();
         paginationType = "client";
       }
     } catch (error) {
       // Server-side doesn't work, use client-side
-      console.warn("Server-side pagination failed, using client-side:", error);
       await loadUsersWithRolesFallback();
       paginationType = "client";
     } finally {
@@ -180,12 +181,32 @@
   async function loadUsersWithRolesFallback() {
     try {
       usersWithRoles = await adminService.getUsersWithRoles();
-      // Tymczasowo konwertuj na format z banami (bez informacji o banach)
-      usersWithBanStatus = usersWithRoles.map((user) => ({
-        ...user,
-        is_banned: false,
-        ban_info: null,
-      }));
+
+      // Get ban information for each user
+      const usersWithBanInfo = await Promise.all(
+        usersWithRoles.map(async (user) => {
+          try {
+            const isBanned = await adminService.isUserBanned(user.id);
+            const banInfo = isBanned
+              ? await adminService.getUserBanInfo(user.id)
+              : null;
+            return {
+              ...user,
+              is_banned: isBanned,
+              ban_info: banInfo,
+            };
+          } catch (error) {
+            return {
+              ...user,
+              is_banned: false,
+              ban_info: null,
+            };
+          }
+        })
+      );
+
+      usersWithBanStatus = usersWithBanInfo;
+      allUsers = [...usersWithBanInfo];
 
       // Set pagination
       totalUsers = usersWithBanStatus.length;
@@ -264,6 +285,14 @@
         updateDisplayedUsers();
       }
 
+      // Also refresh allUsers for bulk operations
+      try {
+        const allUsersResult = await adminService.getAllUsers("all", 1, 1000);
+        allUsers = allUsersResult.users;
+      } catch (error) {
+        console.error("Error refreshing all users:", error);
+      }
+
       successMessage = `Rola użytkownika została zmieniona na ${newRole}`;
       setTimeout(() => {
         successMessage = "";
@@ -308,6 +337,15 @@
         await loadUsersWithRolesFallback();
         updateDisplayedUsers();
       }
+
+      // Also refresh allUsers for bulk operations
+      try {
+        const allUsersResult = await adminService.getAllUsers("all", 1, 1000);
+        allUsers = allUsersResult.users;
+      } catch (error) {
+        console.error("Error refreshing all users:", error);
+      }
+
       successMessage = t.ban_success;
       setTimeout(() => {
         successMessage = "";
@@ -335,6 +373,15 @@
         await loadUsersWithRolesFallback();
         updateDisplayedUsers();
       }
+
+      // Also refresh allUsers for bulk operations
+      try {
+        const allUsersResult = await adminService.getAllUsers("all", 1, 1000);
+        allUsers = allUsersResult.users;
+      } catch (error) {
+        console.error("Error refreshing all users:", error);
+      }
+
       successMessage = t.unban_success;
       setTimeout(() => {
         successMessage = "";
@@ -355,6 +402,14 @@
       } else {
         await loadUsersWithRolesFallback();
         updateDisplayedUsers();
+      }
+
+      // Also refresh allUsers for bulk operations
+      try {
+        const allUsersResult = await adminService.getAllUsers("all", 1, 1000);
+        allUsers = allUsersResult.users;
+      } catch (error) {
+        console.error("Error refreshing all users:", error);
       }
 
       successMessage = t.delete_success;
@@ -395,16 +450,48 @@
 
   async function selectAllUsers() {
     try {
-      // Get all users from the database, not just displayed ones
-      // We need to get all users, so we'll use a large page size
-      const result = await adminService.getUsersWithBanStatusPaginated(1, 1000);
-      allUsers = result.users;
+      // First try the working function
+      const rolesResult = await adminService.getUsersWithRoles();
+
+      if (rolesResult.length === 0) {
+        selectedUserIds = [];
+        return;
+      }
+
+      // Try to get ban information for each user using RPC function
+      const usersWithBanInfo = await Promise.all(
+        rolesResult.map(async (user) => {
+          try {
+            const isBanned = await adminService.isUserBanned(user.id);
+            const banInfo = isBanned
+              ? await adminService.getUserBanInfo(user.id)
+              : null;
+            return {
+              ...user,
+              is_banned: isBanned,
+              ban_info: banInfo,
+            };
+          } catch (error) {
+            return {
+              ...user,
+              is_banned: false,
+              ban_info: null,
+            };
+          }
+        })
+      );
+
+      allUsers = usersWithBanInfo;
+
+      // Update usersWithBanStatus with ban information
+      usersWithBanStatus = [...allUsers];
+      updateDisplayedUsers();
+
       const selectableUserIds = allUsers
         .filter((user) => user.email !== "estasicki@gmail.com")
         .map((user) => user.id);
       selectedUserIds = [...selectableUserIds];
     } catch (error) {
-      console.error("Error selecting all users:", error);
       // Fallback to current page only
       const selectableUserIds = displayedUsers
         .filter((user) => user.email !== "estasicki@gmail.com")
@@ -417,11 +504,11 @@
     selectedUserIds = [];
   }
 
-  function toggleAllUsersSelection() {
+  async function toggleAllUsersSelection() {
     if (areAllUsersSelected) {
       deselectAllUsers();
     } else {
-      selectAllUsers();
+      await selectAllUsers();
     }
   }
 
@@ -490,6 +577,14 @@
         updateDisplayedUsers();
       }
 
+      // Also refresh allUsers for bulk operations
+      try {
+        const allUsersResult = await adminService.getAllUsers("all", 1, 1000);
+        allUsers = allUsersResult.users;
+      } catch (error) {
+        console.error("Error refreshing all users:", error);
+      }
+
       successMessage = t.bulk_ban_success.replace(
         "{count}",
         result.bannedCount.toString()
@@ -518,6 +613,14 @@
       } else {
         await loadUsersWithRolesFallback();
         updateDisplayedUsers();
+      }
+
+      // Also refresh allUsers for bulk operations
+      try {
+        const allUsersResult = await adminService.getAllUsers("all", 1, 1000);
+        allUsers = allUsersResult.users;
+      } catch (error) {
+        console.error("Error refreshing all users:", error);
       }
 
       successMessage = t.bulk_delete_success.replace(

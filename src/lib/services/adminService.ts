@@ -79,7 +79,7 @@ export const adminService = {
   // Set user role (admin only)
   async setUserRole(userId: string, role: "user" | "admin"): Promise<void> {
     try {
-      // Check if trying to remove admin from app creator
+      // Check if trying to remove admin privileges from app creator
       if (role === "user") {
         const { data: userData } = await supabase
           .from("auth.users")
@@ -89,7 +89,7 @@ export const adminService = {
 
         if (userData?.email === "estasicki@gmail.com") {
           throw new Error(
-            "Nie można usunąć uprawnień administratora z twórcy aplikacji"
+            "Cannot remove admin privileges from the application creator"
           );
         }
       }
@@ -144,9 +144,9 @@ export const adminService = {
       }
 
       return (
-        data?.map((item) => ({
+        data?.map((item: any) => ({
           id: item.id,
-          email: item.email || "Brak email",
+          email: item.email || "No email",
           created_at: item.created_at,
           role: item.role,
         })) || []
@@ -164,14 +164,47 @@ export const adminService = {
       });
 
       if (error) {
-        console.warn("is_user_banned RPC not available:", error);
         return false;
       }
 
       return data === true;
     } catch (error) {
-      console.warn("is_user_banned RPC not available:", error);
       return false;
+    }
+  },
+
+  // Get ban info for a user
+  async getUserBanInfo(userId: string): Promise<{
+    id: string;
+    user_id: string;
+    banned_by: string;
+    banned_at: string;
+    ban_expires_at: string | null;
+    reason: string;
+  } | null> {
+    try {
+      const { data, error } = await supabase.rpc("get_user_ban_info", {
+        user_uuid: userId,
+      });
+
+      if (error) {
+        return null;
+      }
+
+      if (data && data.length > 0) {
+        return {
+          id: data[0].id,
+          user_id: data[0].user_id,
+          banned_by: data[0].banned_by,
+          banned_at: data[0].banned_at,
+          ban_expires_at: data[0].ban_expires_at,
+          reason: data[0].reason,
+        };
+      }
+
+      return null;
+    } catch (error) {
+      return null;
     }
   },
 
@@ -194,7 +227,7 @@ export const adminService = {
     } catch (error) {
       console.error("ban_user RPC not available:", error);
       throw new Error(
-        "Funkcja banowania nie jest jeszcze dostępna. Uruchom skrypt SQL w Supabase."
+        "Banning function is not yet available. Run the SQL script in Supabase."
       );
     }
   },
@@ -212,13 +245,36 @@ export const adminService = {
     } catch (error) {
       console.error("unban_user RPC not available:", error);
       throw new Error(
-        "Funkcja odbanowania nie jest jeszcze dostępna. Uruchom skrypt SQL w Supabase."
+        "Unbanning function is not yet available. Run the SQL script in Supabase."
       );
     }
   },
 
-  // Get users with ban information (with pagination)
-  async getUsersWithBanStatusPaginated(
+  // Test function to check if we have users
+  async testGetUsers(): Promise<{
+    userCount: number;
+    sampleUsers: any[];
+  }> {
+    try {
+      const { data, error } = await supabase.rpc("test_get_users");
+
+      if (error) {
+        throw error;
+      }
+
+      return {
+        userCount: data?.user_count || 0,
+        sampleUsers: data?.sample_users || [],
+      };
+    } catch (error) {
+      console.error("test_get_users RPC error:", error);
+      throw error;
+    }
+  },
+
+  // Universal function to get users with filtering and pagination
+  async getAllUsers(
+    filterType: "all" | "banned" | "admin" | "active" = "all",
     page: number = 1,
     pageSize: number = 10
   ): Promise<{
@@ -227,13 +283,11 @@ export const adminService = {
     totalPages: number;
   }> {
     try {
-      const { data, error } = await supabase.rpc(
-        "get_users_with_ban_status_paginated",
-        {
-          page_number: page,
-          page_size: pageSize,
-        }
-      );
+      const { data, error } = await supabase.rpc("get_all_users", {
+        filter_type: filterType,
+        page_number: page,
+        page_size: pageSize,
+      });
 
       if (error) {
         throw error;
@@ -242,7 +296,7 @@ export const adminService = {
       const users =
         data?.users?.map((item: any) => ({
           id: item.id,
-          email: item.email || "Brak email",
+          email: item.email || "No email",
           created_at: item.created_at,
           role: item.role,
           is_banned: item.is_banned || false,
@@ -264,12 +318,21 @@ export const adminService = {
         totalPages: Math.ceil((data?.total_count || 0) / pageSize),
       };
     } catch (error) {
-      console.warn(
-        "get_users_with_ban_status_paginated RPC not available:",
-        error
-      );
+      console.warn("get_all_users RPC not available:", error);
       throw error;
     }
+  },
+
+  // Legacy function for backward compatibility
+  async getUsersWithBanStatusPaginated(
+    page: number = 1,
+    pageSize: number = 10
+  ): Promise<{
+    users: UserWithBanStatus[];
+    totalCount: number;
+    totalPages: number;
+  }> {
+    return this.getAllUsers("all", page, pageSize);
   },
 
   // Delete user account (admin only)
@@ -285,12 +348,12 @@ export const adminService = {
 
       // Check if the operation was successful
       if (data && !data.success) {
-        throw new Error(data.error || "Błąd podczas usuwania użytkownika");
+        throw new Error(data.error || "Error while deleting user");
       }
     } catch (error) {
       console.error("delete_user_account RPC error:", error);
       throw new Error(
-        "Błąd podczas usuwania użytkownika. Sprawdź czy funkcja SQL została dodana w Supabase."
+        "Error while deleting user. Check if the SQL function has been added to Supabase."
       );
     }
   },
@@ -304,7 +367,7 @@ export const adminService = {
       );
 
       if (filteredUserIds.length === 0) {
-        throw new Error("Nie można modyfikować konta założyciela");
+        throw new Error("Cannot modify the creator account");
       }
 
       const { data, error } = await supabase.rpc("bulk_delete_users", {
@@ -316,16 +379,14 @@ export const adminService = {
       }
 
       if (!data.success) {
-        throw new Error(
-          data.error || "Błąd podczas masowego usuwania użytkowników"
-        );
+        throw new Error(data.error || "Error during bulk user deletion");
       }
 
       return { deletedCount: data.deleted_count || 0 };
     } catch (error) {
       console.error("bulk_delete_users RPC error:", error);
       throw new Error(
-        "Błąd podczas masowego usuwania użytkowników. Sprawdź czy funkcja SQL została dodana w Supabase."
+        "Error during bulk user deletion. Check if the SQL function has been added to Supabase."
       );
     }
   },
@@ -343,7 +404,7 @@ export const adminService = {
       );
 
       if (filteredUserIds.length === 0) {
-        throw new Error("Nie można modyfikować konta założyciela");
+        throw new Error("Cannot modify the creator account");
       }
 
       const { data, error } = await supabase.rpc("bulk_ban_users", {
@@ -357,16 +418,14 @@ export const adminService = {
       }
 
       if (!data.success) {
-        throw new Error(
-          data.error || "Błąd podczas masowego banowania użytkowników"
-        );
+        throw new Error(data.error || "Error during bulk user banning");
       }
 
       return { bannedCount: data.banned_count || 0 };
     } catch (error) {
       console.error("bulk_ban_users RPC error:", error);
       throw new Error(
-        "Błąd podczas masowego banowania użytkowników. Sprawdź czy funkcja SQL została dodana w Supabase."
+        "Error during bulk user banning. Check if the SQL function has been added to Supabase."
       );
     }
   },
