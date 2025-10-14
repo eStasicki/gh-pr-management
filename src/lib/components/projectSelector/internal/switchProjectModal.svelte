@@ -44,7 +44,7 @@
           <button
             on:click={handleClose}
             class="text-gray-400 hover:text-gray-600 transition-colors duration-200"
-            aria-label="Zamknij modal"
+            aria-label="Close modal"
           >
             <svg
               class="w-6 h-6"
