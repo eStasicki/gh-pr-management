@@ -3,9 +3,16 @@
   import { translations } from "$lib/translations";
   import { browser } from "$app/environment";
   import { githubAPI } from "$lib/services/github-api";
-  import { selectedPRs, updatePRs, prs, refreshLabels } from "$lib/stores";
+  import {
+    selectedPRs,
+    updatePRs,
+    prs,
+    validateAuth,
+    refreshLabels,
+  } from "$lib/stores";
   import Modal from "../../modal.svelte";
-  import LabelSelector from "../../../LabelSelector.svelte";
+  import BranchSelector from "../../../branchSelector.svelte";
+  import LabelSelector from "../../../labelSelector.svelte";
   import SelectedPRsList from "../selectedPRsList.svelte";
   import ProcessingState from "../processingState.svelte";
   import ResultsList from "../resultsList.svelte";
@@ -15,6 +22,8 @@
   export let onClose: () => void;
 
   let t = translations.pl;
+  let baseBranch = "";
+  let addLabels = false;
   let selectedLabels: string[] = [];
   let isProcessing = false;
   let currentProcessingPR = 0;
@@ -29,6 +38,7 @@
     t = translations[$language];
   }
 
+  // Auto-close modal if no PRs are selected
   $: if (isOpen && $selectedPRs.length === 0) {
     handleModalClose();
   }
@@ -39,9 +49,13 @@
   }
 
   function handleConfirm() {
-    if (selectedLabels.length > 0 && $selectedPRs.length > 0) {
+    if (baseBranch.trim() && $selectedPRs.length > 0) {
       processPRs();
     }
+  }
+
+  function handleBranchSelect(branch: string) {
+    baseBranch = branch;
   }
 
   function handleLabelsChange(labels: string[]) {
@@ -50,6 +64,8 @@
 
   async function handleModalClose() {
     if (!isProcessing) {
+      baseBranch = "";
+      addLabels = false;
       selectedLabels = [];
       processingResults = [];
       showResults = false;
@@ -105,7 +121,13 @@
       currentProcessingPR = prNumber;
 
       try {
-        await githubAPI.addLabelsToPR(prNumber, selectedLabels);
+        await githubAPI.updatePRBase(prNumber, baseBranch.trim());
+
+        // Add labels if enabled and selected
+        if (addLabels && selectedLabels.length > 0) {
+          await githubAPI.addLabelsToPR(prNumber, selectedLabels);
+        }
+
         processingResults.push({ prNumber, success: true });
       } catch (error) {
         processingResults.push({
@@ -119,47 +141,54 @@
     isProcessing = false;
     showResults = true;
 
+    // Update only the affected PRs in the store (smooth update without loader)
     const successfulPRs = processingResults
       .filter((result) => result.success)
       .map((result) => result.prNumber);
 
     if (successfulPRs.length > 0) {
+      // Update each PR individually to preserve their existing labels
       const newLabelsData =
-        await convertStringLabelsToGitHubLabels(selectedLabels);
+        addLabels && selectedLabels.length > 0
+          ? await convertStringLabelsToGitHubLabels(selectedLabels)
+          : [];
 
       successfulPRs.forEach((prNumber) => {
         const currentLabels = getCurrentLabels(prNumber);
-        const currentLabelNames = currentLabels.map((label) => label.name);
+        let newLabels = currentLabels;
 
-        // Filter out labels that already exist
-        const labelsToAdd = newLabelsData.filter(
-          (newLabel) => !currentLabelNames.includes(newLabel.name)
-        );
+        if (addLabels && selectedLabels.length > 0) {
+          const currentLabelNames = currentLabels.map((label) => label.name);
 
-        const newLabels = [...currentLabels, ...labelsToAdd];
+          // Filter out labels that already exist
+          const labelsToAdd = newLabelsData.filter(
+            (newLabel) => !currentLabelNames.includes(newLabel.name)
+          );
+
+          newLabels = [...currentLabels, ...labelsToAdd];
+        }
 
         updatePRs([prNumber], {
+          base: { ref: baseBranch.trim() },
           labels: newLabels,
         });
       });
 
       // Refresh labels in the global store
-      await refreshLabels();
+      if (addLabels) {
+        await refreshLabels();
+      }
     }
   }
 </script>
 
 <Modal
   bind:isOpen
-  title="{t.add_labels} ({$selectedPRs.length})"
+  title="{t.change_selected_base} ({$selectedPRs.length})"
   maxWidth="max-w-2xl"
   on:close={handleModalClose}
 >
-  {#if $selectedPRs.length === 0}
-    <div class="text-center py-8">
-      <p class="text-gray-500 text-lg">{t.select_pr_first}</p>
-    </div>
-  {:else if !isProcessing && !showResults}
+  {#if !isProcessing && !showResults}
     <SelectedPRsList
       selectedPRs={$selectedPRs}
       {isProcessing}
@@ -167,18 +196,38 @@
     />
 
     <div>
-      <LabelSelector {selectedLabels} onLabelsChange={handleLabelsChange} />
-      <p class="text-sm text-gray-500 mt-2">
-        {t.add_labels_help}
-      </p>
+      <BranchSelector
+        bind:selectedBranch={baseBranch}
+        onBranchSelect={handleBranchSelect}
+      />
     </div>
+
+    <div>
+      <label class="flex items-center gap-2 cursor-pointer">
+        <input
+          type="checkbox"
+          bind:checked={addLabels}
+          class="w-4 h-4 text-blue-600 bg-gray-100 border-gray-300 rounded focus:ring-blue-500 focus:ring-2"
+        />
+        <span class="text-sm font-medium text-gray-700">
+          {t.add_labels_to_prs}
+        </span>
+      </label>
+    </div>
+
+    {#if addLabels}
+      <div>
+        <LabelSelector
+          bind:selectedLabels
+          onLabelsChange={handleLabelsChange}
+        />
+      </div>
+    {/if}
 
     <ModalFooter
       cancelText={t.cancel}
-      confirmText={t.add_labels}
-      confirmDisabled={selectedLabels.length === 0}
-      confirmVariant="success"
-      {isProcessing}
+      confirmText={t.confirm}
+      confirmDisabled={!baseBranch.trim() || $selectedPRs.length === 0}
       onCancel={handleModalClose}
       onConfirm={handleConfirm}
     />

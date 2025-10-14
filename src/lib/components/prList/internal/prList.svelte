@@ -14,8 +14,8 @@
   import { browser } from "$app/environment";
   import type { GitHubPR } from "$lib/types";
   import { PER_PAGE } from "$lib/consts";
-  import CardItem from "./CardItem.svelte";
-  import SkeletonItem from "./SkeletonItem.svelte";
+  import CardItem from "./cardItem.svelte";
+  import SkeletonItem from "./skeletonItem.svelte";
   let t = translations.pl;
 
   $: if (browser) {
