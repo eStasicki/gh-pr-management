@@ -294,4 +294,80 @@ export const adminService = {
       );
     }
   },
+
+  // Bulk delete users (admin only)
+  async bulkDeleteUsers(userIds: string[]): Promise<{ deletedCount: number }> {
+    try {
+      // Filter out creator email from the list
+      const filteredUserIds = userIds.filter(
+        (id) => id !== "estasicki@gmail.com"
+      );
+
+      if (filteredUserIds.length === 0) {
+        throw new Error("Nie można modyfikować konta założyciela");
+      }
+
+      const { data, error } = await supabase.rpc("bulk_delete_users", {
+        target_user_ids: filteredUserIds,
+      });
+
+      if (error) {
+        throw error;
+      }
+
+      if (!data.success) {
+        throw new Error(
+          data.error || "Błąd podczas masowego usuwania użytkowników"
+        );
+      }
+
+      return { deletedCount: data.deleted_count || 0 };
+    } catch (error) {
+      console.error("bulk_delete_users RPC error:", error);
+      throw new Error(
+        "Błąd podczas masowego usuwania użytkowników. Sprawdź czy funkcja SQL została dodana w Supabase."
+      );
+    }
+  },
+
+  // Bulk ban users (admin only)
+  async bulkBanUsers(
+    userIds: string[],
+    expiresAt: string | null,
+    reason?: string
+  ): Promise<{ bannedCount: number }> {
+    try {
+      // Filter out creator email from the list
+      const filteredUserIds = userIds.filter(
+        (id) => id !== "estasicki@gmail.com"
+      );
+
+      if (filteredUserIds.length === 0) {
+        throw new Error("Nie można modyfikować konta założyciela");
+      }
+
+      const { data, error } = await supabase.rpc("bulk_ban_users", {
+        target_user_ids: filteredUserIds,
+        expires_at: expiresAt,
+        ban_reason: reason || null,
+      });
+
+      if (error) {
+        throw error;
+      }
+
+      if (!data.success) {
+        throw new Error(
+          data.error || "Błąd podczas masowego banowania użytkowników"
+        );
+      }
+
+      return { bannedCount: data.banned_count || 0 };
+    } catch (error) {
+      console.error("bulk_ban_users RPC error:", error);
+      throw new Error(
+        "Błąd podczas masowego banowania użytkowników. Sprawdź czy funkcja SQL została dodana w Supabase."
+      );
+    }
+  },
 };

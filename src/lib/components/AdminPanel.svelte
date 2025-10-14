@@ -10,6 +10,8 @@
   import ApiStatus from "./ApiStatus.svelte";
   import BanUserModal from "./modal/internal/modals/banUserModal.svelte";
   import DeleteUserModal from "./modal/internal/modals/deleteUserModal.svelte";
+  import BulkBanModal from "./modal/internal/modals/bulkBanModal.svelte";
+  import BulkDeleteModal from "./modal/internal/modals/bulkDeleteModal.svelte";
 
   let t = translations.pl;
   let usersWithBanStatus: UserWithBanStatus[] = [];
@@ -28,6 +30,18 @@
   let selectedUser: { id: string; email: string } | null = null;
   let selectedUserForDelete: { id: string; email: string } | null = null;
   let openDropdownId: string | null = null;
+
+  // Bulk operations state
+  let selectedUserIds: string[] = [];
+  let bulkBanModalOpen = false;
+  let bulkDeleteModalOpen = false;
+  let bulkDeleteModalRef: BulkDeleteModal;
+
+  // Reactive statement to ensure reactivity
+  $: selectedUsersCount = selectedUserIds.length;
+  $: selectedUsers = allUsers.filter((user) =>
+    selectedUserIds.includes(user.id)
+  );
 
   // Pagination
   const PER_PAGE = 10;
@@ -101,6 +115,16 @@
 
   onMount(() => {
     loadUsersWithRoles();
+
+    // Load all users for bulk operations
+    adminService
+      .getUsersWithBanStatusPaginated(1, 1000)
+      .then((result) => {
+        allUsers = result.users;
+      })
+      .catch((error) => {
+        console.error("Error loading all users:", error);
+      });
 
     // Close dropdown when clicking outside
     const handleClickOutside = (event: MouseEvent) => {
@@ -358,6 +382,160 @@
   function setActiveTab(tab: string) {
     activeTab = tab;
   }
+
+  // Bulk operations functions
+  function toggleUserSelection(userId: string) {
+    const index = selectedUserIds.indexOf(userId);
+    if (index > -1) {
+      selectedUserIds = selectedUserIds.filter((id) => id !== userId);
+    } else {
+      selectedUserIds = [...selectedUserIds, userId];
+    }
+  }
+
+  async function selectAllUsers() {
+    try {
+      // Get all users from the database, not just displayed ones
+      // We need to get all users, so we'll use a large page size
+      const result = await adminService.getUsersWithBanStatusPaginated(1, 1000);
+      allUsers = result.users;
+      const selectableUserIds = allUsers
+        .filter((user) => user.email !== "estasicki@gmail.com")
+        .map((user) => user.id);
+      selectedUserIds = [...selectableUserIds];
+    } catch (error) {
+      console.error("Error selecting all users:", error);
+      // Fallback to current page only
+      const selectableUserIds = displayedUsers
+        .filter((user) => user.email !== "estasicki@gmail.com")
+        .map((user) => user.id);
+      selectedUserIds = [...selectableUserIds];
+    }
+  }
+
+  function deselectAllUsers() {
+    selectedUserIds = [];
+  }
+
+  function toggleAllUsersSelection() {
+    if (areAllUsersSelected) {
+      deselectAllUsers();
+    } else {
+      selectAllUsers();
+    }
+  }
+
+  function isUserSelected(userId: string): boolean {
+    return selectedUserIds.includes(userId);
+  }
+
+  function getSelectedUsersCount(): number {
+    return selectedUsersCount;
+  }
+
+  function getSelectedUsers(): UserWithBanStatus[] {
+    return allUsers.filter((user) => selectedUserIds.includes(user.id));
+  }
+
+  // We need to track all users to check if all are selected
+  let allUsers: UserWithBanStatus[] = [];
+
+  // Reactive statement for checkbox state
+  $: areAllUsersSelected = (() => {
+    const selectableUsers = allUsers.filter(
+      (user) => user.email !== "estasicki@gmail.com"
+    );
+    return (
+      selectableUsers.length > 0 &&
+      selectableUsers.every((user) => selectedUserIds.includes(user.id))
+    );
+  })();
+
+  // Reactive statement for some users selected
+  $: areSomeUsersSelected = selectedUserIds.length > 0;
+
+  function openBulkBanModal() {
+    if (selectedUsersCount === 0) return;
+    bulkBanModalOpen = true;
+  }
+
+  function closeBulkBanModal() {
+    bulkBanModalOpen = false;
+  }
+
+  function openBulkDeleteModal() {
+    if (selectedUsersCount === 0) return;
+    bulkDeleteModalOpen = true;
+  }
+
+  function closeBulkDeleteModal() {
+    bulkDeleteModalOpen = false;
+  }
+
+  async function handleBulkBanUsers(event: CustomEvent) {
+    try {
+      const { expiresAt, reason } = event.detail;
+      const userIds = [...selectedUserIds];
+      const result = await adminService.bulkBanUsers(
+        userIds,
+        expiresAt,
+        reason
+      );
+
+      // Refresh current page
+      if (paginationType === "server") {
+        await loadUsersWithRoles();
+      } else {
+        await loadUsersWithRolesFallback();
+        updateDisplayedUsers();
+      }
+
+      successMessage = t.bulk_ban_success.replace(
+        "{count}",
+        result.bannedCount.toString()
+      );
+      setTimeout(() => {
+        successMessage = "";
+      }, 3000);
+
+      // Clear selection and close modal
+      deselectAllUsers();
+      closeBulkBanModal();
+    } catch (error) {
+      errorMessage = t.bulk_operation_error;
+      console.error("Bulk ban error:", error);
+    }
+  }
+
+  async function handleBulkDeleteUsers() {
+    try {
+      const userIds = [...selectedUserIds];
+      const result = await adminService.bulkDeleteUsers(userIds);
+
+      // Refresh current page
+      if (paginationType === "server") {
+        await loadUsersWithRoles();
+      } else {
+        await loadUsersWithRolesFallback();
+        updateDisplayedUsers();
+      }
+
+      successMessage = t.bulk_delete_success.replace(
+        "{count}",
+        result.deletedCount.toString()
+      );
+      setTimeout(() => {
+        successMessage = "";
+      }, 3000);
+
+      // Clear selection and close modal
+      deselectAllUsers();
+      closeBulkDeleteModal();
+    } catch (error) {
+      errorMessage = t.bulk_operation_error;
+      console.error("Bulk delete error:", error);
+    }
+  }
 </script>
 
 <div class="bg-white rounded-2xl p-8 mb-6 shadow-2xl">
@@ -528,6 +706,21 @@
             <table class="w-full table-auto">
               <thead>
                 <tr class="border-b border-gray-200">
+                  <th
+                    class="text-left py-3 px-4 font-semibold text-gray-700 w-12"
+                  >
+                    <input
+                      type="checkbox"
+                      checked={areAllUsersSelected}
+                      indeterminate={areSomeUsersSelected &&
+                        !areAllUsersSelected}
+                      on:change={toggleAllUsersSelection}
+                      class="w-4 h-4 text-blue-600 bg-gray-100 border-gray-300 rounded focus:ring-blue-500 focus:ring-2"
+                      title={areAllUsersSelected
+                        ? t.deselect_all_users
+                        : t.select_all_users}
+                    />
+                  </th>
                   <th class="text-left py-3 px-4 font-semibold text-gray-700"
                     >{t.user_email}</th
                   >
@@ -546,12 +739,24 @@
                 </tr>
               </thead>
               <tbody>
-                {#each displayedUsers as user}
+                {#each displayedUsers as user (user.id + "-" + selectedUserIds.length)}
                   <tr
                     class="border-b border-gray-100 hover:bg-gray-50 {user.is_banned
                       ? 'bg-red-50'
                       : ''}"
                   >
+                    <td class="py-3 px-4 text-gray-800">
+                      <input
+                        type="checkbox"
+                        checked={isUserSelected(user.id)}
+                        disabled={user.email === "estasicki@gmail.com"}
+                        on:change={() => toggleUserSelection(user.id)}
+                        class="w-4 h-4 text-blue-600 bg-gray-100 border-gray-300 rounded focus:ring-blue-500 focus:ring-2 disabled:opacity-50 disabled:cursor-not-allowed"
+                        title={user.email === "estasicki@gmail.com"
+                          ? t.cannot_modify_creator
+                          : ""}
+                      />
+                    </td>
                     <td class="py-3 px-4 text-gray-800 flex items-center">
                       {#if user.is_banned}
                         <svg
@@ -774,6 +979,94 @@
           {/if}
         {/if}
 
+        <!-- Bulk Actions Toolbar -->
+        {#if selectedUsersCount > 0}
+          <div class="mt-4 p-4 bg-blue-50 border border-blue-200 rounded-lg">
+            <div class="flex items-center justify-between">
+              <div class="flex items-center">
+                <svg
+                  class="w-5 h-5 text-blue-600 mr-2"
+                  fill="none"
+                  stroke="currentColor"
+                  viewBox="0 0 24 24"
+                >
+                  <path
+                    stroke-linecap="round"
+                    stroke-linejoin="round"
+                    stroke-width="2"
+                    d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"
+                  />
+                </svg>
+                <span class="text-sm font-medium text-blue-800">
+                  {t.selected_users_count.replace(
+                    "{count}",
+                    selectedUsersCount.toString()
+                  )}
+                </span>
+              </div>
+              <div class="flex items-center space-x-3">
+                <button
+                  on:click={openBulkBanModal}
+                  class="flex items-center px-3 py-2 text-sm font-medium text-orange-700 bg-orange-100 border border-orange-300 rounded-md hover:bg-orange-200 focus:outline-none focus:ring-2 focus:ring-orange-500"
+                >
+                  <svg
+                    class="w-4 h-4 mr-2"
+                    fill="none"
+                    stroke="currentColor"
+                    viewBox="0 0 24 24"
+                  >
+                    <path
+                      stroke-linecap="round"
+                      stroke-linejoin="round"
+                      stroke-width="2"
+                      d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z"
+                    />
+                  </svg>
+                  {t.bulk_ban_users}
+                </button>
+                <button
+                  on:click={openBulkDeleteModal}
+                  class="flex items-center px-3 py-2 text-sm font-medium text-red-700 bg-red-100 border border-red-300 rounded-md hover:bg-red-200 focus:outline-none focus:ring-2 focus:ring-red-500"
+                >
+                  <svg
+                    class="w-4 h-4 mr-2"
+                    fill="none"
+                    stroke="currentColor"
+                    viewBox="0 0 24 24"
+                  >
+                    <path
+                      stroke-linecap="round"
+                      stroke-linejoin="round"
+                      stroke-width="2"
+                      d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"
+                    />
+                  </svg>
+                  {t.bulk_delete_users}
+                </button>
+                <button
+                  on:click={deselectAllUsers}
+                  class="flex items-center px-3 py-2 text-sm font-medium text-gray-700 bg-gray-100 border border-gray-300 rounded-md hover:bg-gray-200 focus:outline-none focus:ring-2 focus:ring-gray-500"
+                >
+                  <svg
+                    class="w-4 h-4 mr-2"
+                    fill="none"
+                    stroke="currentColor"
+                    viewBox="0 0 24 24"
+                  >
+                    <path
+                      stroke-linecap="round"
+                      stroke-linejoin="round"
+                      stroke-width="2"
+                      d="M6 18L18 6M6 6l12 12"
+                    />
+                  </svg>
+                  {t.deselect_all_users}
+                </button>
+              </div>
+            </div>
+          </div>
+        {/if}
+
         <!-- Pagination -->
         {#if totalPages > 1}
           <div class="mt-6 pt-6 border-t border-gray-200">
@@ -919,3 +1212,20 @@
     on:close={closeDeleteModal}
   />
 {/if}
+
+<!-- Bulk Ban Modal -->
+<BulkBanModal
+  bind:isOpen={bulkBanModalOpen}
+  {selectedUsers}
+  on:ban={handleBulkBanUsers}
+  on:close={closeBulkBanModal}
+/>
+
+<!-- Bulk Delete Modal -->
+<BulkDeleteModal
+  bind:this={bulkDeleteModalRef}
+  bind:isOpen={bulkDeleteModalOpen}
+  {selectedUsers}
+  on:delete={handleBulkDeleteUsers}
+  on:close={closeBulkDeleteModal}
+/>
