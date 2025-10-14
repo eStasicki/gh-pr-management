@@ -1,4 +1,12 @@
-export { config, loadConfigFromSupabase, saveConfigToSupabase } from "./config";
+export {
+  config,
+  loadConfigFromSupabase,
+  saveConfigToSupabase,
+  currentProject,
+  allProjects,
+  loadAllProjects,
+  switchProject,
+} from "./config";
 export { language } from "./language";
 export { auth, validateAuth } from "./auth";
 export { admin, checkAdminStatus, refreshAdminStatus } from "./admin";

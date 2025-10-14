@@ -9,6 +9,7 @@
     prs,
     totalPRs,
     totalPages,
+    currentProject,
   } from "$lib/stores";
   import { language } from "$lib/stores/language";
   import { translations } from "$lib/translations";
@@ -224,8 +225,34 @@
         <h2 class="text-2xl font-bold text-gray-800">
           {t.my_prs}
         </h2>
+        {#if $currentProject}
+          <div class="mt-2">
+            <span
+              class="inline-flex items-center px-3 py-1 rounded-full text-sm font-medium bg-blue-100 text-blue-800 border border-blue-200"
+            >
+              <svg
+                class="w-4 h-4 mr-2"
+                fill="none"
+                stroke="currentColor"
+                viewBox="0 0 24 24"
+              >
+                <path
+                  stroke-linecap="round"
+                  stroke-linejoin="round"
+                  stroke-width="2"
+                  d="M19 21V5a2 2 0 00-2-2H7a2 2 0 00-2 2v16m14 0h2m-2 0h-5m-9 0H3m2 0h5M9 7h1m-1 4h1m4-4h1m-1 4h1m-5 10v-5a1 1 0 011-1h2a1 1 0 011 1v5m-4 0h4"
+                />
+              </svg>
+              <span class="font-semibold">{t.current_project}:</span>
+              <span class="ml-1">{$currentProject.project_name}</span>
+              <span class="ml-2 text-blue-600"
+                >({$currentProject.repo_owner}/{$currentProject.repo_name})</span
+              >
+            </span>
+          </div>
+        {/if}
         {#if $prs.length > 0}
-          <p class="text-sm text-gray-600 mt-1">
+          <p class="text-sm text-gray-600 mt-2">
             {t.loaded_prs
               .replace("{loaded}", String($prs.length))
               .replace("{total}", String($totalPRs))}

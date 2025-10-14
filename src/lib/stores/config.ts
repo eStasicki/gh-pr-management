@@ -2,6 +2,7 @@ import { writable } from "svelte/store";
 import { browser } from "$app/environment";
 import type { GitHubConfig } from "$lib/types";
 import { settingsService } from "$lib/services/settingsService";
+import { projectsService, type Project } from "$lib/services/projectsService";
 
 const defaultConfig: GitHubConfig = {
   token: "",
@@ -12,7 +13,6 @@ const defaultConfig: GitHubConfig = {
   demoMode: false,
 };
 
-// Load config from localStorage only
 function loadConfig(): GitHubConfig {
   if (browser) {
     const stored = localStorage.getItem("gh_config");
@@ -27,9 +27,26 @@ function loadConfig(): GitHubConfig {
 }
 
 export const config = writable<GitHubConfig>(defaultConfig);
+export const currentProject = writable<Project | null>(null);
+export const allProjects = writable<Project[]>([]);
 
 export const loadConfigFromSupabase = async (): Promise<GitHubConfig> => {
   try {
+    await projectsService.migrateFromUserSettings();
+
+    const activeProject = await projectsService.getActiveProject();
+    if (activeProject) {
+      currentProject.set(activeProject);
+      return {
+        token: activeProject.github_token,
+        owner: activeProject.repo_owner,
+        repo: activeProject.repo_name,
+        enterpriseUrl: activeProject.enterprise_url || "",
+        requiresVpn: activeProject.requires_vpn || false,
+        demoMode: activeProject.demo_mode || false,
+      };
+    }
+
     const settings = await settingsService.getSettings();
     if (settings) {
       return {
@@ -41,7 +58,9 @@ export const loadConfigFromSupabase = async (): Promise<GitHubConfig> => {
         demoMode: settings.demo_mode || false,
       };
     }
-  } catch (error) {}
+  } catch (error) {
+    console.error("Error loading config:", error);
+  }
 
   return loadConfig();
 };
@@ -50,15 +69,84 @@ export const saveConfigToSupabase = async (
   config: GitHubConfig
 ): Promise<void> => {
   try {
-    await settingsService.saveSettings({
-      github_token: config.token,
-      repo_owner: config.owner,
-      repo_name: config.repo,
-      enterprise_url: config.enterpriseUrl,
-      requires_vpn: config.requiresVpn,
-      demo_mode: config.demoMode,
-    });
+    const activeProject = await projectsService.getActiveProject();
+
+    if (activeProject) {
+      await projectsService.updateProject(activeProject.id, {
+        github_token: config.token,
+        repo_owner: config.owner,
+        repo_name: config.repo,
+        enterprise_url: config.enterpriseUrl,
+        requires_vpn: config.requiresVpn,
+        demo_mode: config.demoMode,
+      });
+
+      const updatedProject = await projectsService.getActiveProject();
+      if (updatedProject) {
+        currentProject.set(updatedProject);
+      }
+    } else {
+      await settingsService.saveSettings({
+        github_token: config.token,
+        repo_owner: config.owner,
+        repo_name: config.repo,
+        enterprise_url: config.enterpriseUrl,
+        requires_vpn: config.requiresVpn,
+        demo_mode: config.demoMode,
+      });
+    }
   } catch (error) {
+    throw error;
+  }
+};
+
+export const loadAllProjects = async (): Promise<void> => {
+  try {
+    const projects = await projectsService.getAllProjects();
+    allProjects.set(projects);
+  } catch (error) {
+    console.error("Error loading projects:", error);
+    allProjects.set([]);
+  }
+};
+
+export const switchProject = async (
+  projectId: string,
+  reloadData: boolean = false
+): Promise<void> => {
+  try {
+    const project = await projectsService.setActiveProject(projectId);
+    currentProject.set(project);
+
+    const newConfig: GitHubConfig = {
+      token: project.github_token,
+      owner: project.repo_owner,
+      repo: project.repo_name,
+      enterpriseUrl: project.enterprise_url || "",
+      requiresVpn: project.requires_vpn || false,
+      demoMode: project.demo_mode || false,
+    };
+
+    config.set(newConfig);
+
+    if (reloadData) {
+      localStorage.removeItem("selectedPRs");
+
+      const { selectedPRs, prs, totalPRs, totalPages, currentPage } =
+        await import("./prs");
+      selectedPRs.set([]);
+      prs.set([]);
+      totalPRs.set(0);
+      totalPages.set(0);
+      currentPage.set(1);
+
+      const { clearCache } = await import("$lib/utils/apiUtils");
+      clearCache();
+    }
+
+    await loadAllProjects();
+  } catch (error) {
+    console.error("Error switching project:", error);
     throw error;
   }
 };
