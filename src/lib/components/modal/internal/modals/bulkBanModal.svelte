@@ -1,17 +1,14 @@
 <script lang="ts">
+  import { createEventDispatcher } from "svelte";
   import { language } from "$lib/stores/language";
   import { translations } from "$lib/translations";
   import { browser } from "$app/environment";
+  import type { UserWithBanStatus } from "$lib/services/adminService";
+
+  const dispatch = createEventDispatcher();
 
   export let isOpen = false;
-  export let userEmail = "";
-  export let userId = "";
-  export let onBan: (
-    userId: string,
-    expiresAt: string | null,
-    reason?: string
-  ) => Promise<void>;
-  export let onClose: () => void;
+  export let selectedUsers: UserWithBanStatus[] = [];
 
   let t = translations.pl;
   let banType: "permanent" | "temporary" = "permanent";
@@ -27,7 +24,7 @@
   function handleClose() {
     if (!isLoading) {
       resetForm();
-      onClose();
+      dispatch("close");
     }
   }
 
@@ -64,10 +61,12 @@
 
     isLoading = true;
     try {
-      await onBan(userId, expiresAt, reason.trim() || undefined);
-      // Don't close modal here - let AdminPanel handle it after setting success message
+      dispatch("ban", {
+        expiresAt,
+        reason: reason.trim() || undefined,
+      });
     } catch (error) {
-      console.error("Error banning user:", error);
+      console.error("Error banning users:", error);
     } finally {
       isLoading = false;
     }
@@ -83,11 +82,11 @@
     class="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4"
   >
     <div
-      class="bg-white rounded-2xl shadow-2xl max-w-md w-full max-h-[90vh] overflow-y-auto"
+      class="bg-white rounded-2xl shadow-2xl max-w-lg w-full max-h-[90vh] overflow-y-auto"
     >
       <div class="p-6">
         <div class="flex items-center justify-between mb-6">
-          <h3 class="text-xl font-bold text-gray-800">{t.ban_user_title}</h3>
+          <h3 class="text-xl font-bold text-gray-800">{t.bulk_ban_users}</h3>
           <button
             on:click={handleClose}
             disabled={isLoading}
@@ -111,8 +110,19 @@
         </div>
 
         <div class="mb-6">
-          <p class="text-gray-600 mb-2">{t.user_email}:</p>
-          <p class="font-semibold text-gray-800">{userEmail}</p>
+          <p class="text-gray-600 mb-2">
+            {t.bulk_ban_confirm.replace(
+              "{count}",
+              selectedUsers.length.toString()
+            )}
+          </p>
+          <div class="max-h-32 overflow-y-auto bg-gray-50 rounded-lg p-3">
+            <ul class="space-y-1">
+              {#each selectedUsers as user}
+                <li class="text-sm text-gray-700">• {user.email}</li>
+              {/each}
+            </ul>
+          </div>
         </div>
 
         <div class="space-y-6">
@@ -247,7 +257,7 @@
           <button
             on:click={handleBan}
             disabled={isLoading || (banType === "temporary" && !getExpiresAt())}
-            class="flex-1 px-4 py-2 bg-red-600 text-white rounded-lg font-medium hover:bg-red-700 transition-colors duration-200 disabled:opacity-50 disabled:cursor-not-allowed"
+            class="flex-1 px-4 py-2 bg-orange-600 text-white rounded-lg font-medium hover:bg-orange-700 transition-colors duration-200 disabled:opacity-50 disabled:cursor-not-allowed"
           >
             {#if isLoading}
               <svg
@@ -270,7 +280,7 @@
                 ></path>
               </svg>
             {:else}
-              {t.confirm_ban}
+              {t.bulk_ban_users}
             {/if}
           </button>
         </div>
