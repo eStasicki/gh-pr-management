@@ -271,4 +271,27 @@ export const adminService = {
       throw error;
     }
   },
+
+  // Delete user account (admin only)
+  async deleteUser(userId: string): Promise<void> {
+    try {
+      const { data, error } = await supabase.rpc("delete_user_account", {
+        target_user_id: userId,
+      });
+
+      if (error) {
+        throw error;
+      }
+
+      // Check if the operation was successful
+      if (data && !data.success) {
+        throw new Error(data.error || "Błąd podczas usuwania użytkownika");
+      }
+    } catch (error) {
+      console.error("delete_user_account RPC error:", error);
+      throw new Error(
+        "Błąd podczas usuwania użytkownika. Sprawdź czy funkcja SQL została dodana w Supabase."
+      );
+    }
+  },
 };

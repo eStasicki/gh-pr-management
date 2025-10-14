@@ -7,8 +7,9 @@
   import { language } from "$lib/stores/language";
   import { translations } from "$lib/translations";
   import { browser } from "$app/environment";
-  import ApiStatus from "./apiStatus.svelte";
+  import ApiStatus from "./ApiStatus.svelte";
   import BanUserModal from "./modal/internal/modals/banUserModal.svelte";
+  import DeleteUserModal from "./modal/internal/modals/deleteUserModal.svelte";
 
   let t = translations.pl;
   let usersWithBanStatus: UserWithBanStatus[] = [];
@@ -23,7 +24,9 @@
   let successMessage = "";
   let activeTab = "users";
   let banModalOpen = false;
+  let deleteModalOpen = false;
   let selectedUser: { id: string; email: string } | null = null;
+  let selectedUserForDelete: { id: string; email: string } | null = null;
   let openDropdownId: string | null = null;
 
   // Pagination
@@ -257,6 +260,16 @@
     selectedUser = null;
   }
 
+  function openDeleteModal(user: { id: string; email: string }) {
+    selectedUserForDelete = user;
+    deleteModalOpen = true;
+  }
+
+  function closeDeleteModal() {
+    deleteModalOpen = false;
+    selectedUserForDelete = null;
+  }
+
   async function handleBanUser(
     userId: string,
     expiresAt: string | null,
@@ -275,6 +288,9 @@
       setTimeout(() => {
         successMessage = "";
       }, 3000);
+
+      // Close modal after setting success message
+      closeBanModal();
     } catch (error) {
       errorMessage = t.ban_error;
       console.error("Ban error:", error);
@@ -302,6 +318,30 @@
     } catch (error) {
       errorMessage = t.unban_error;
       console.error("Unban error:", error);
+    }
+  }
+
+  async function handleDeleteUser(userId: string) {
+    try {
+      await adminService.deleteUser(userId);
+
+      // Refresh current page
+      if (paginationType === "server") {
+        await loadUsersWithRoles();
+      } else {
+        await loadUsersWithRolesFallback();
+        updateDisplayedUsers();
+      }
+
+      successMessage = t.delete_success;
+      setTimeout(() => {
+        successMessage = "";
+      }, 3000);
+
+      closeDeleteModal();
+    } catch (error) {
+      errorMessage = t.delete_error;
+      console.error("Delete user error:", error);
     }
   }
 
@@ -440,9 +480,22 @@
 
         {#if successMessage}
           <div
-            class="p-4 bg-green-50 border border-green-200 rounded-lg text-green-700 mb-6"
+            class="p-4 bg-green-50 border border-green-200 rounded-lg text-green-700 mb-6 flex items-center"
           >
-            {successMessage}
+            <svg
+              class="w-5 h-5 text-green-600 mr-3 flex-shrink-0"
+              fill="none"
+              stroke="currentColor"
+              viewBox="0 0 24 24"
+            >
+              <path
+                stroke-linecap="round"
+                stroke-linejoin="round"
+                stroke-width="2"
+                d="M5 13l4 4L19 7"
+              />
+            </svg>
+            <span class="font-medium">{successMessage}</span>
           </div>
         {/if}
 
@@ -673,6 +726,33 @@
                                     {t.ban_user}
                                   </button>
                                 {/if}
+
+                                <!-- Delete user action -->
+                                <button
+                                  on:click={() =>
+                                    handleActionClick(() =>
+                                      openDeleteModal({
+                                        id: user.id,
+                                        email: user.email,
+                                      })
+                                    )}
+                                  class="flex items-center w-full px-4 py-2 text-sm text-red-700 hover:bg-red-50"
+                                >
+                                  <svg
+                                    class="w-4 h-4 mr-3"
+                                    fill="none"
+                                    stroke="currentColor"
+                                    viewBox="0 0 24 24"
+                                  >
+                                    <path
+                                      stroke-linecap="round"
+                                      stroke-linejoin="round"
+                                      stroke-width="2"
+                                      d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"
+                                    />
+                                  </svg>
+                                  {t.delete_user}
+                                </button>
                               </div>
                             </div>
                           {/if}
@@ -827,5 +907,15 @@
     userId={selectedUser.id}
     onBan={handleBanUser}
     onClose={closeBanModal}
+  />
+{/if}
+
+{#if selectedUserForDelete}
+  <DeleteUserModal
+    bind:isOpen={deleteModalOpen}
+    userEmail={selectedUserForDelete.email}
+    userId={selectedUserForDelete.id}
+    on:delete={(event) => handleDeleteUser(event.detail.userId)}
+    on:close={closeDeleteModal}
   />
 {/if}

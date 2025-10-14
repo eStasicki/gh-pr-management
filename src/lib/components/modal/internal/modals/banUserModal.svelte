@@ -65,7 +65,7 @@
     isLoading = true;
     try {
       await onBan(userId, expiresAt, reason.trim() || undefined);
-      handleClose();
+      // Don't close modal here - let AdminPanel handle it after setting success message
     } catch (error) {
       console.error("Error banning user:", error);
     } finally {
