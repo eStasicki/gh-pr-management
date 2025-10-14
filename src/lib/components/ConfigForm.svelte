@@ -8,6 +8,7 @@
     loadConfigFromSupabase,
     saveConfigToSupabase,
     admin,
+    currentProject,
   } from "$lib/stores";
   import { language } from "$lib/stores/language";
   import { translations } from "$lib/translations";
@@ -50,39 +51,7 @@
 
   onMount(() => {
     if (browser) {
-      isLoading = true;
-      loadConfigFromSupabase()
-        .then((supabaseConfig) => {
-          if (supabaseConfig.token) {
-            token = supabaseConfig.token;
-            owner = supabaseConfig.owner;
-            repo = supabaseConfig.repo;
-            enterpriseUrl = supabaseConfig.enterpriseUrl;
-            useEnterprise = !!supabaseConfig.enterpriseUrl;
-            requiresVpn = supabaseConfig.requiresVpn || false;
-          } else {
-            // Fallback do lokalnego store
-            const currentConfig = get(config);
-            token = currentConfig.token || "";
-            owner = currentConfig.owner || "";
-            repo = currentConfig.repo || "";
-            enterpriseUrl = currentConfig.enterpriseUrl || "";
-            useEnterprise = !!currentConfig.enterpriseUrl;
-            requiresVpn = currentConfig.requiresVpn || false;
-          }
-          isLoading = false;
-        })
-        .catch((error) => {
-          errorMessage = "Błąd podczas ładowania ustawień";
-          const currentConfig = get(config);
-          token = currentConfig.token || "";
-          owner = currentConfig.owner || "";
-          repo = currentConfig.repo || "";
-          enterpriseUrl = currentConfig.enterpriseUrl || "";
-          useEnterprise = !!currentConfig.enterpriseUrl;
-          requiresVpn = currentConfig.requiresVpn || false;
-          isLoading = false;
-        });
+      loadFormData();
     }
 
     clickOutsideHandler = createClickOutsideHandlerWithSelector(
@@ -97,6 +66,46 @@
       clickOutsideHandler.removeEventListener();
     };
   });
+
+  // Reactive statement to reload form data when currentProject changes
+  $: if ($currentProject && browser) {
+    loadFormData();
+  }
+
+  async function loadFormData() {
+    isLoading = true;
+    try {
+      const supabaseConfig = await loadConfigFromSupabase();
+      if (supabaseConfig.token) {
+        token = supabaseConfig.token;
+        owner = supabaseConfig.owner;
+        repo = supabaseConfig.repo;
+        enterpriseUrl = supabaseConfig.enterpriseUrl;
+        useEnterprise = !!supabaseConfig.enterpriseUrl;
+        requiresVpn = supabaseConfig.requiresVpn || false;
+      } else {
+        // Fallback to local store
+        const currentConfig = get(config);
+        token = currentConfig.token || "";
+        owner = currentConfig.owner || "";
+        repo = currentConfig.repo || "";
+        enterpriseUrl = currentConfig.enterpriseUrl || "";
+        useEnterprise = !!currentConfig.enterpriseUrl;
+        requiresVpn = currentConfig.requiresVpn || false;
+      }
+    } catch (error) {
+      errorMessage = t.settings_loading_error;
+      const currentConfig = get(config);
+      token = currentConfig.token || "";
+      owner = currentConfig.owner || "";
+      repo = currentConfig.repo || "";
+      enterpriseUrl = currentConfig.enterpriseUrl || "";
+      useEnterprise = !!currentConfig.enterpriseUrl;
+      requiresVpn = currentConfig.requiresVpn || false;
+    } finally {
+      isLoading = false;
+    }
+  }
 
   function selectToken(tokenItem: any) {
     token = tokenItem.token;
@@ -120,7 +129,7 @@
     successMessage = "";
 
     try {
-      // Zapisz do Supabase
+      // Save to Supabase
       await saveConfigToSupabase({
         token,
         owner,
@@ -139,12 +148,12 @@
         requiresVpn,
       });
 
-      // Walidacja
+      // Validation
       await validateAuth(true);
 
-      successMessage = "Ustawienia zostały zapisane pomyślnie!";
+      successMessage = t.settings_saved_success;
     } catch (error) {
-      errorMessage = "Błąd podczas zapisywania ustawień. Spróbuj ponownie.";
+      errorMessage = t.settings_save_error;
     } finally {
       isSaving = false;
     }
@@ -154,10 +163,10 @@
     try {
       if (isDemoMode()) {
         await disableDemoMode();
-        successMessage = "Tryb demo został wyłączony";
+        successMessage = t.demo_mode_disabled;
       } else {
         await enableDemoMode();
-        successMessage = "Tryb demo został włączony - 50 przykładowych PR";
+        successMessage = t.demo_mode_enabled;
       }
 
       // Clear message after 3 seconds
@@ -165,7 +174,7 @@
         successMessage = "";
       }, 3000);
     } catch (error) {
-      errorMessage = "Błąd podczas zmiany trybu demo";
+      errorMessage = t.demo_mode_error;
     }
   }
 </script>
@@ -191,9 +200,19 @@
     </div>
   {/if}
 
-  <h2 class="text-2xl font-bold text-gray-800 mb-6">
-    {t.config_title}
-  </h2>
+  <div class="flex items-center justify-between mb-6">
+    <h2 class="text-2xl font-bold text-gray-800">
+      {t.config_title}
+    </h2>
+    {#if $currentProject}
+      <div class="text-sm text-gray-600">
+        <span class="font-medium">{t.current_project}:</span>
+        <span class="text-blue-600 font-semibold">
+          {$currentProject.project_name}
+        </span>
+      </div>
+    {/if}
+  </div>
 
   <div class="space-y-6">
     <div class="relative token-dropdown-container">
@@ -355,8 +374,7 @@
       <div class="border-t pt-6">
         <h3 class="text-lg font-semibold text-gray-800 mb-4">{t.demo_mode}</h3>
         <p class="text-sm text-gray-600 mb-4">
-          Tryb demo pozwala na testowanie aplikacji z przykładowymi danymi bez
-          konieczności konfiguracji GitHub API.
+          {t.demo_mode_description}
         </p>
         <button
           on:click={toggleDemoMode}
@@ -426,7 +444,7 @@
           d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"
         ></path>
       </svg>
-      <span class="ml-3 text-gray-600">Ładowanie ustawień...</span>
+      <span class="ml-3 text-gray-600">{t.loading_settings}</span>
     </div>
   </div>
 {/if}
