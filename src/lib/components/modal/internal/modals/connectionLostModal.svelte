@@ -3,8 +3,8 @@
   import { translations } from "$lib/translations";
   import { browser } from "$app/environment";
   import { auth, validateAuth } from "$lib/stores";
-  import Modal from "../Modal.svelte";
-  import ModalFooter from "../modal-parts/ModalFooter.svelte";
+  import Modal from "../../modal.svelte";
+  import ModalFooter from "../modalFooter.svelte";
 
   export let isOpen = false;
 

@@ -4,11 +4,11 @@
   import { auth } from "$lib/stores";
   import { language } from "$lib/stores/language";
   import { translations } from "$lib/translations";
-  import SelectAllAction from "./actionsMenu/SelectAllAction.svelte";
-  import RefreshAction from "./actionsMenu/RefreshAction.svelte";
-  import ChangeSelectedBaseAction from "./actionsMenu/ChangeSelectedBaseAction.svelte";
-  import RemoveLabelsAction from "./actionsMenu/RemoveLabelsAction.svelte";
-  import AddLabelsAction from "./actionsMenu/AddLabelsAction.svelte";
+  import SelectAllAction from "./internal/selectAllAction.svelte";
+  import RefreshAction from "./internal/refreshAction.svelte";
+  import ChangeSelectedBaseAction from "./internal/changeSelectedBaseAction.svelte";
+  import RemoveLabelsAction from "./internal/removeLabelsAction.svelte";
+  import AddLabelsAction from "./internal/addLabelsAction.svelte";
   import { createActionsHandlers } from "$lib/utils/actionsUtils";
   import {
     createDropdownHandlers,

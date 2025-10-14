@@ -7,8 +7,8 @@
   import { language } from "$lib/stores/language";
   import { translations } from "$lib/translations";
   import { browser } from "$app/environment";
-  import ApiStatus from "./ApiStatus.svelte";
-  import BanUserModal from "./modals/BanUserModal.svelte";
+  import ApiStatus from "./apiStatus.svelte";
+  import BanUserModal from "./modal/internal/modals/banUserModal.svelte";
 
   let t = translations.pl;
   let usersWithBanStatus: UserWithBanStatus[] = [];

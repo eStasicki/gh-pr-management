@@ -5,7 +5,7 @@
   import { language } from "$lib/stores/language";
   import { translations } from "$lib/translations";
   import { browser } from "$app/environment";
-  import NavLink from "./NavLink.svelte";
+  import NavLink from "./navLink.svelte";
 
   export let isMobile = false;
   export let onLinkClick: (() => void) | undefined = undefined;
