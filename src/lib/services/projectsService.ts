@@ -77,7 +77,6 @@ export const projectsService = {
             enterprise_url: decryptedEnterpriseUrl,
           };
         } catch (error) {
-          console.error("Error decrypting project:", error);
           return {
             ...project,
             github_token: "",
@@ -133,7 +132,6 @@ export const projectsService = {
         enterprise_url: decryptedEnterpriseUrl,
       };
     } catch (error) {
-      console.error("Error decrypting active project:", error);
       return null;
     }
   },
@@ -179,7 +177,6 @@ export const projectsService = {
         enterprise_url: decryptedEnterpriseUrl,
       };
     } catch (error) {
-      console.error("Error decrypting project:", error);
       return null;
     }
   },
@@ -463,7 +460,6 @@ export const projectsService = {
 
       return true;
     } catch (error) {
-      console.error("Error migrating from user_settings:", error);
       return false;
     }
   },

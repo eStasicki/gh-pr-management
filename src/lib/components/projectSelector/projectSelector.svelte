@@ -16,7 +16,6 @@
   import DeleteProjectModal from "./internal/deleteProjectModal.svelte";
 
   let t = translations.pl;
-  let selectedProjectId = "";
   let showAddModal = false;
   let showRenameModal = false;
   let showSwitchModal = false;
@@ -32,10 +31,6 @@
 
   $: if (browser) {
     t = translations[$language];
-  }
-
-  $: if ($currentProject) {
-    selectedProjectId = $currentProject.id;
   }
 
   onMount(() => {
@@ -195,6 +190,14 @@
     try {
       await projectsService.renameProject(projectToRename.id, newName);
       await loadAllProjects();
+
+      // Update currentProject if the renamed project is currently active
+      if (projectToRename.id === $currentProject?.id) {
+        const updatedProject = await projectsService.getActiveProject();
+        if (updatedProject) {
+          currentProject.set(updatedProject);
+        }
+      }
 
       successMessage = t.project_updated;
       setTimeout(() => {

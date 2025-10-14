@@ -9,11 +9,12 @@
     saveConfigToSupabase,
     admin,
     currentProject,
+    loadAllProjects,
   } from "$lib/stores";
   import { language } from "$lib/stores/language";
   import { translations } from "$lib/translations";
   import { browser } from "$app/environment";
-  import { onMount } from "svelte";
+  import { onMount, afterUpdate } from "svelte";
   import { get } from "svelte/store";
   import ConnectionLostModal from "./modal/internal/modals/connectionLostModal.svelte";
   import {
@@ -25,6 +26,7 @@
     disableDemoMode,
     isDemoMode,
   } from "$lib/utils/demoMode";
+  import { projectsService } from "$lib/services/projectsService";
 
   let t = translations.pl;
   let token = "";
@@ -39,6 +41,16 @@
   let isSaving = false;
   let errorMessage = "";
   let successMessage = "";
+  let hasChanges = false;
+  let isInitialLoad = true;
+  let originalValues = {
+    token: "",
+    owner: "",
+    repo: "",
+    enterpriseUrl: "",
+    useEnterprise: false,
+    requiresVpn: false,
+  };
 
   $: if (browser) {
     t = translations[$language];
@@ -52,6 +64,9 @@
   onMount(() => {
     if (browser) {
       loadFormData();
+      if ($currentProject) {
+        currentProjectId = $currentProject.id;
+      }
     }
 
     clickOutsideHandler = createClickOutsideHandlerWithSelector(
@@ -67,9 +82,28 @@
     };
   });
 
+  let currentProjectId = "";
+
   // Reactive statement to reload form data when currentProject changes
-  $: if ($currentProject && browser) {
+  $: if (
+    $currentProject &&
+    browser &&
+    !isInitialLoad &&
+    $currentProject.id !== currentProjectId
+  ) {
+    currentProjectId = $currentProject.id;
     loadFormData();
+  }
+
+  // Function to check for changes
+  function checkForChanges() {
+    hasChanges =
+      token !== originalValues.token ||
+      owner !== originalValues.owner ||
+      repo !== originalValues.repo ||
+      enterpriseUrl !== originalValues.enterpriseUrl ||
+      useEnterprise !== originalValues.useEnterprise ||
+      requiresVpn !== originalValues.requiresVpn;
   }
 
   async function loadFormData() {
@@ -93,6 +127,16 @@
         useEnterprise = !!currentConfig.enterpriseUrl;
         requiresVpn = currentConfig.requiresVpn || false;
       }
+
+      // Save original values for change detection
+      originalValues = {
+        token,
+        owner,
+        repo,
+        enterpriseUrl,
+        useEnterprise,
+        requiresVpn,
+      };
     } catch (error) {
       errorMessage = t.settings_loading_error;
       const currentConfig = get(config);
@@ -102,8 +146,19 @@
       enterpriseUrl = currentConfig.enterpriseUrl || "";
       useEnterprise = !!currentConfig.enterpriseUrl;
       requiresVpn = currentConfig.requiresVpn || false;
+
+      // Save original values for change detection
+      originalValues = {
+        token,
+        owner,
+        repo,
+        enterpriseUrl,
+        useEnterprise,
+        requiresVpn,
+      };
     } finally {
       isLoading = false;
+      isInitialLoad = false;
     }
   }
 
@@ -150,6 +205,28 @@
 
       // Validation
       await validateAuth(true);
+
+      // Update currentProject store with fresh data
+      const updatedProject = await projectsService.getActiveProject();
+      if (updatedProject) {
+        currentProject.set(updatedProject);
+      }
+
+      // Reload all projects to update the project list
+      await loadAllProjects();
+
+      // Update original values to reflect saved state
+      originalValues = {
+        token,
+        owner,
+        repo,
+        enterpriseUrl: useEnterprise ? enterpriseUrl : "",
+        useEnterprise,
+        requiresVpn,
+      };
+
+      // Reset hasChanges after successful save
+      hasChanges = false;
 
       successMessage = t.settings_saved_success;
     } catch (error) {
@@ -228,6 +305,7 @@
           id="github-token"
           bind:value={token}
           on:input={handleTokenInput}
+          on:change={checkForChanges}
           on:focus={() => (showTokenDropdown = $tokenHistory.length > 0)}
           placeholder="ghp_xxxxxxxxxxxxxxxxxxxx"
           class="w-full px-4 py-3 pr-10 border-2 border-gray-200 rounded-lg text-base transition-colors focus:outline-none focus:border-primary-500 focus:ring-4 focus:ring-primary-100"
@@ -296,6 +374,7 @@
         type="text"
         id="repo-owner"
         bind:value={owner}
+        on:change={checkForChanges}
         placeholder="username"
         class="w-full px-4 py-3 border-2 border-gray-200 rounded-lg text-base transition-colors focus:outline-none focus:border-primary-500 focus:ring-4 focus:ring-primary-100"
       />
@@ -312,6 +391,7 @@
         type="text"
         id="repo-name"
         bind:value={repo}
+        on:change={checkForChanges}
         placeholder="repository-name"
         class="w-full px-4 py-3 border-2 border-gray-200 rounded-lg text-base transition-colors focus:outline-none focus:border-primary-500 focus:ring-4 focus:ring-primary-100"
       />
@@ -323,6 +403,7 @@
           type="checkbox"
           id="use-enterprise"
           bind:checked={useEnterprise}
+          on:change={checkForChanges}
           class="h-4 w-4 text-blue-600 focus:ring-blue-500 border-gray-300 rounded"
         />
         <label
@@ -345,6 +426,7 @@
             type="text"
             id="github-enterprise-url"
             bind:value={enterpriseUrl}
+            on:change={checkForChanges}
             placeholder="https://github.company.com"
             class="w-full px-4 py-3 border-2 border-gray-200 rounded-lg text-base transition-colors focus:outline-none focus:border-primary-500 focus:ring-4 focus:ring-primary-100"
           />
@@ -360,6 +442,7 @@
         type="checkbox"
         id="requires-vpn"
         bind:checked={requiresVpn}
+        on:change={checkForChanges}
         class="h-4 w-4 text-blue-600 focus:ring-blue-500 border-gray-300 rounded"
       />
       <label
@@ -385,39 +468,41 @@
       </div>
     {/if}
 
-    <button
-      on:click={saveConfig}
-      disabled={isSaving || isLoading}
-      class="w-full bg-blue-600 text-white px-6 py-3 rounded-lg text-base font-semibold cursor-pointer transition-all duration-300 hover:bg-blue-700 disabled:opacity-50 disabled:cursor-not-allowed"
-    >
-      {#if isSaving}
-        <span class="flex items-center justify-center">
-          <svg
-            class="animate-spin -ml-1 mr-3 h-5 w-5 text-white"
-            xmlns="http://www.w3.org/2000/svg"
-            fill="none"
-            viewBox="0 0 24 24"
-          >
-            <circle
-              class="opacity-25"
-              cx="12"
-              cy="12"
-              r="10"
-              stroke="currentColor"
-              stroke-width="4"
-            ></circle>
-            <path
-              class="opacity-75"
-              fill="currentColor"
-              d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"
-            ></path>
-          </svg>
-          Zapisywanie...
-        </span>
-      {:else}
-        {t.save_config}
-      {/if}
-    </button>
+    {#if hasChanges}
+      <button
+        on:click={saveConfig}
+        disabled={isSaving || isLoading}
+        class="w-full bg-blue-600 text-white px-6 py-3 rounded-lg text-base font-semibold cursor-pointer transition-all duration-300 hover:bg-blue-700 disabled:opacity-50 disabled:cursor-not-allowed"
+      >
+        {#if isSaving}
+          <span class="flex items-center justify-center">
+            <svg
+              class="animate-spin -ml-1 mr-3 h-5 w-5 text-white"
+              xmlns="http://www.w3.org/2000/svg"
+              fill="none"
+              viewBox="0 0 24 24"
+            >
+              <circle
+                class="opacity-25"
+                cx="12"
+                cy="12"
+                r="10"
+                stroke="currentColor"
+                stroke-width="4"
+              ></circle>
+              <path
+                class="opacity-75"
+                fill="currentColor"
+                d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"
+              ></path>
+            </svg>
+            {t.saving_config}
+          </span>
+        {:else}
+          {t.save_config}
+        {/if}
+      </button>
+    {/if}
   </div>
 </div>
 
