@@ -56,25 +56,7 @@
     "createStartMenuShortcut": true
   },
   "dmg": {
-    "title": "${productName} ${version}",
-    "contents": [
-      {
-        "x": 110,
-        "y": 150
-      },
-      {
-        "x": 240,
-        "y": 150,
-        "type": "link",
-        "path": "/Applications"
-      }
-    ],
-    "background": null,
-    "iconSize": 128,
-    "window": {
-      "width": 540,
-      "height": 380
-    }
+    "title": "${productName} ${version}"
   }
 }
 
