@@ -8,19 +8,33 @@ const isDev = process.env.NODE_ENV === "development" || !app.isPackaged;
 
 const getBuildPath = (): string => {
   if (app.isPackaged) {
+    // In packaged app, build files are inside the app resources
     const appPath = app.getAppPath();
-    const buildPath = path.join(path.dirname(appPath), "build");
-    if (existsSync(buildPath)) {
-      return buildPath;
+    // Try app/build first (if app is unpacked)
+    const buildPathUnpacked = path.join(appPath, "build");
+    if (existsSync(buildPathUnpacked)) {
+      return buildPathUnpacked;
     }
+    // Try app.asar/build (if app is packed as asar)
+    const buildPathAsar = path.join(appPath, "..", "build");
+    if (existsSync(buildPathAsar)) {
+      return buildPathAsar;
+    }
+    // Try Resources/build (macOS structure)
+    const resourcesPath = process.resourcesPath;
+    if (resourcesPath) {
+      const buildPathResources = path.join(resourcesPath, "app", "build");
+      if (existsSync(buildPathResources)) {
+        return buildPathResources;
+      }
+    }
+    // Fallback to appPath/build
     return path.join(appPath, "build");
   }
   const electronDist = __dirname;
   return path.resolve(electronDist, "../../build");
 };
 
-const buildPath = getBuildPath();
-const indexPath = path.join(buildPath, "index.html");
 const localPort = 5174;
 const localHost = "127.0.0.1";
 
@@ -46,15 +60,15 @@ const getMimeType = (ext: string): string => {
   return mimeTypes[ext] || "application/octet-stream";
 };
 
-const startLocalServer = (): Promise<string> => {
+const startLocalServer = (buildDir: string): Promise<string> => {
   return new Promise((resolve, reject) => {
     if (localServer) {
       resolve(`http://${localHost}:${localPort}`);
       return;
     }
 
-    if (!existsSync(buildPath)) {
-      reject(new Error("Build directory not found"));
+    if (!existsSync(buildDir)) {
+      reject(new Error(`Build directory not found: ${buildDir}`));
       return;
     }
 
@@ -73,10 +87,10 @@ const startLocalServer = (): Promise<string> => {
         requestPath = "/index.html";
       }
 
-      let filePath: string = path.join(buildPath, requestPath);
+      let filePath: string = path.join(buildDir, requestPath);
 
       const normalizedPath: string = path.resolve(filePath);
-      const buildPathResolved: string = path.resolve(buildPath);
+      const buildPathResolved: string = path.resolve(buildDir);
 
       if (
         !normalizedPath.startsWith(buildPathResolved + path.sep) &&
@@ -85,7 +99,7 @@ const startLocalServer = (): Promise<string> => {
         console.log(
           `[Server] Path outside build directory (${normalizedPath}), using index.html`
         );
-        filePath = indexPath;
+        filePath = path.join(buildDir, "index.html");
       }
 
       const finalPath: string = path.resolve(filePath);
@@ -130,6 +144,7 @@ const startLocalServer = (): Promise<string> => {
       }
 
       console.log(`[Server] Falling back to index.html for: ${requestPath}`);
+      const indexPath = path.join(buildDir, "index.html");
       const content: Buffer = readFileSync(indexPath);
       headers["Content-Type"] = "text/html";
       headers["Content-Security-Policy"] =
@@ -214,6 +229,10 @@ const createWindow = async (): Promise<void> => {
 
   const loadApp = async (): Promise<void> => {
     console.log("=== Loading app ===");
+    const buildPath = getBuildPath();
+    const indexPath = path.join(buildPath, "index.html");
+    console.log("App path:", app.getAppPath());
+    console.log("Resources path:", process.resourcesPath);
     console.log("Build path:", buildPath);
     console.log("Build directory exists:", existsSync(buildPath));
     console.log("Index file exists:", existsSync(indexPath));
@@ -226,7 +245,7 @@ const createWindow = async (): Promise<void> => {
     try {
       if (existsSync(buildPath)) {
         console.log("Starting local server...");
-        const localUrl = await startLocalServer();
+        const localUrl = await startLocalServer(buildPath);
         console.log("✓ Server ready, URL:", localUrl);
 
         console.log("Waiting for server to be fully ready...");
@@ -449,7 +468,12 @@ const createWindow = async (): Promise<void> => {
 
       if (errorCode === -105 || validatedURL?.includes("chrome-error")) {
         console.error("Network error or invalid URL detected");
-        if (existsSync(buildPath) && mainWindow && !mainWindow.isDestroyed()) {
+        const currentBuildPath = getBuildPath();
+        if (
+          existsSync(currentBuildPath) &&
+          mainWindow &&
+          !mainWindow.isDestroyed()
+        ) {
           console.log("Retrying with fresh server connection...");
           await new Promise((resolve) => setTimeout(resolve, 500));
           await loadApp();
