@@ -1,6 +1,6 @@
 {
   "name": "gh-pr-management-electron",
-  "version": "0.0.1",
+  "version": "0.0.3",
   "description": "GitHub PR Management Desktop App",
   "main": "dist/main.js",
   "scripts": {
@@ -8,7 +8,11 @@
     "dev": "tsc --watch",
     "start": "electron ."
   },
-  "keywords": ["electron", "desktop", "github"],
+  "keywords": [
+    "electron",
+    "desktop",
+    "github"
+  ],
   "author": "",
   "license": "ISC",
   "devDependencies": {
@@ -21,4 +25,3 @@
     "electron-updater": "^6.1.7"
   }
 }
-
