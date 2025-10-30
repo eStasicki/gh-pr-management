@@ -3,9 +3,9 @@ CREATE TABLE IF NOT EXISTS projects (
   id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
   user_id UUID REFERENCES auth.users(id) ON DELETE CASCADE NOT NULL,
   project_name TEXT NOT NULL,
-  github_token TEXT NOT NULL,
-  repo_owner TEXT NOT NULL,
-  repo_name TEXT NOT NULL,
+  github_token TEXT,
+  repo_owner TEXT,
+  repo_name TEXT,
   enterprise_url TEXT,
   requires_vpn BOOLEAN DEFAULT false,
   demo_mode BOOLEAN DEFAULT false,
@@ -32,21 +32,25 @@ CREATE UNIQUE INDEX IF NOT EXISTS idx_projects_user_name_unique
 ALTER TABLE projects ENABLE ROW LEVEL SECURITY;
 
 -- Policy: Users can only see their own projects
+DROP POLICY IF EXISTS "Users can view own projects" ON projects;
 CREATE POLICY "Users can view own projects" ON projects
   FOR SELECT
   USING (auth.uid() = user_id);
 
 -- Policy: Users can insert their own projects
+DROP POLICY IF EXISTS "Users can insert own projects" ON projects;
 CREATE POLICY "Users can insert own projects" ON projects
   FOR INSERT
   WITH CHECK (auth.uid() = user_id);
 
 -- Policy: Users can update their own projects
+DROP POLICY IF EXISTS "Users can update own projects" ON projects;
 CREATE POLICY "Users can update own projects" ON projects
   FOR UPDATE
   USING (auth.uid() = user_id);
 
 -- Policy: Users can delete their own projects
+DROP POLICY IF EXISTS "Users can delete own projects" ON projects;
 CREATE POLICY "Users can delete own projects" ON projects
   FOR DELETE
   USING (auth.uid() = user_id);
@@ -61,6 +65,7 @@ END;
 $$ LANGUAGE plpgsql;
 
 -- Trigger to update updated_at on project updates
+DROP TRIGGER IF EXISTS trigger_update_projects_updated_at ON projects;
 CREATE TRIGGER trigger_update_projects_updated_at
   BEFORE UPDATE ON projects
   FOR EACH ROW
@@ -83,6 +88,7 @@ END;
 $$ LANGUAGE plpgsql;
 
 -- Trigger to ensure only one active project
+DROP TRIGGER IF EXISTS trigger_ensure_one_active_project ON projects;
 CREATE TRIGGER trigger_ensure_one_active_project
   BEFORE INSERT OR UPDATE ON projects
   FOR EACH ROW

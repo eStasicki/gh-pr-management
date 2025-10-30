@@ -46,9 +46,49 @@ jobs:
           path: build/
           retention-days: 7
 
-  comment-preview:
+      - name: Upload build artifact for Electron validation
+        uses: actions/upload-artifact@v4
+        with:
+          name: sveltekit-build-${{ github.event.number || github.sha }}
+          path: build
+          retention-days: 1
+
+  validate-electron-build:
     runs-on: ubuntu-latest
     needs: build-preview
+    
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: "22"
+          cache: "yarn"
+
+      - name: Install dependencies
+        run: yarn install --frozen-lockfile
+
+      - name: Download SvelteKit build
+        uses: actions/download-artifact@v4
+        with:
+          name: sveltekit-build-${{ github.event.number || github.sha }}
+          path: build
+
+      - name: Install Electron dependencies
+        run: npm run electron:install
+
+      - name: Build Electron TypeScript
+        run: npm run electron:build
+
+      - name: Validate Electron build (Linux)
+        run: npm run package:linux
+
+  comment-preview:
+    runs-on: ubuntu-latest
+    needs: [build-preview, validate-electron-build]
+    if: always()
     steps:
       - name: Comment PR with build info
         uses: actions/github-script@v7
@@ -69,10 +109,18 @@ jobs:
             const branchName = context.payload.pull_request.head.ref;
             const commitSha = context.payload.pull_request.head.sha.substring(0, 7);
             
+            // Check Electron validation job status
+            const electronJobResult = '${{ needs.validate-electron-build.result }}';
+            const electronStatus = electronJobResult === 'success' ? '✅' : '⚠️';
+            
             const commentBody = `🚀 **Build completed successfully!**
             
             **PR #${prNumber}** - Branch: \`${branchName}\`
             **Commit:** \`${commitSha}\`
+            
+            **Build Status:**
+            - SvelteKit Build: ✅
+            - Electron Validation: ${electronStatus} (checks compilation and packaging)
             
             **Build artifacts:** Available for download from the Actions tab
             **Production URL:** https://${context.repo.owner}.github.io/${context.repo.repo}/

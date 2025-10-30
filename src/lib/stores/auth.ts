@@ -53,8 +53,11 @@ async function validateAuth(force = false) {
   const currentState = get(auth);
   const timeSinceLastValidation = Date.now() - currentState.lastValidation;
 
-  // Only skip validation if not forced and validation was recent (but allow immediate validation on config change)
-  if (!force && timeSinceLastValidation < 5000) {
+  if (!force && timeSinceLastValidation < 10000) {
+    return;
+  }
+
+  if (currentState.isValidating) {
     return;
   }
 
@@ -158,8 +161,26 @@ function startConnectionMonitoring() {
 export { validateAuth };
 
 if (browser) {
-  config.subscribe(() => {
-    validateAuth(true); // Force validation on config change
+  let validationTimeout: ReturnType<typeof setTimeout> | null = null;
+  let lastConfigHash = "";
+
+  config.subscribe((currentConfig) => {
+    const configHash = `${currentConfig.token}-${currentConfig.owner}-${currentConfig.repo}-${currentConfig.requiresVpn}`;
+
+    if (configHash === lastConfigHash) {
+      return;
+    }
+
+    lastConfigHash = configHash;
+
+    if (validationTimeout) {
+      clearTimeout(validationTimeout);
+    }
+
+    validationTimeout = setTimeout(() => {
+      validateAuth(true);
+      validationTimeout = null;
+    }, 500);
   });
 
   setupApiErrorHandling();

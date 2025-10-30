@@ -1,7 +1,7 @@
 export {
   config,
-  loadConfigFromSupabase,
-  saveConfigToSupabase,
+  loadConfigFromProjects,
+  saveConfigToProjects,
   currentProject,
   allProjects,
   loadAllProjects,

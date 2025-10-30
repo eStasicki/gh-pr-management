@@ -2,6 +2,8 @@
   "name": "gh-pr-management",
   "private": true,
   "version": "0.0.1",
+  "description": "GitHub PR Management Desktop Application",
+  "author": "",
   "type": "module",
   "scripts": {
     "dev": "node generate-config.cjs && vite dev",
@@ -10,7 +12,18 @@
     "prepare": "svelte-kit sync || echo ''",
     "check": "svelte-kit sync && svelte-check --tsconfig ./tsconfig.json",
     "check:watch": "svelte-kit sync && svelte-check --tsconfig ./tsconfig.json --watch",
-    "generate-config": "node generate-config.cjs"
+    "generate-config": "node generate-config.cjs",
+    "electron:install": "cd electron && npm install",
+    "electron:build": "cd electron && npm run build",
+    "electron:dev": "cd electron && npm run build && npm start",
+    "electron:start": "cd electron && npm start",
+    "build:electron": "npm run build && npm run electron:build",
+    "app": "npm run build:electron && npm run electron:start",
+    "package": "npm run build && npm run electron:build && electron-builder",
+    "package:win": "npm run build && npm run electron:build && electron-builder --win",
+    "package:mac": "npm run build && npm run electron:build && electron-builder --mac",
+    "package:linux": "npm run build && npm run electron:build && electron-builder --linux",
+    "package:all": "npm run build && npm run electron:build && electron-builder --mac --win"
   },
   "devDependencies": {
     "@sveltejs/adapter-auto": "^6.1.0",
@@ -21,6 +34,8 @@
     "@tailwindcss/typography": "^0.5.19",
     "autoprefixer": "^10.4.21",
     "dotenv": "^17.2.3",
+    "electron": "^28.1.0",
+    "electron-builder": "^24.13.3",
     "postcss": "^8.5.6",
     "svelte": "^5.39.5",
     "svelte-check": "^4.3.2",

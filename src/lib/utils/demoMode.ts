@@ -8,7 +8,7 @@ import {
 } from "$lib/stores/prs";
 import { generateMockPRs, mockCurrentUser } from "$lib/mockData";
 import { get } from "svelte/store";
-import { config, saveConfigToSupabase } from "$lib/stores/config";
+import { config, saveConfigToProjects } from "$lib/stores/config";
 import { resetMockCache } from "$lib/utils/apiUtils";
 
 // Cache dla mock danych w trybie demo
@@ -43,7 +43,7 @@ export async function enableDemoMode() {
   config.set(updatedConfig);
 
   try {
-    await saveConfigToSupabase(updatedConfig);
+    await saveConfigToProjects(updatedConfig);
   } catch (error) {}
 }
 
@@ -62,7 +62,7 @@ export async function disableDemoMode() {
   config.set(updatedConfig);
 
   try {
-    await saveConfigToSupabase(updatedConfig);
+    await saveConfigToProjects(updatedConfig);
   } catch (error) {}
 }
 

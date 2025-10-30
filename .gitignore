@@ -24,3 +24,10 @@ config.json
 # Vite
 vite.config.js.timestamp-*
 vite.config.ts.timestamp-*
+
+# Electron
+/electron/dist
+/electron/node_modules
+
+# Electron Builder
+/dist-electron
