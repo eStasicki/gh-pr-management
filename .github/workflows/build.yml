@@ -78,7 +78,7 @@ jobs:
         run: npm run electron:install
 
       - name: Build Electron for Windows
-        run: npm run package:win
+        run: npm run electron:build && npx electron-builder --win --publish=never
 
       - name: Upload Windows installer
         uses: actions/upload-artifact@v4
@@ -114,7 +114,7 @@ jobs:
         run: npm run electron:install
 
       - name: Build Electron for macOS
-        run: npm run package:mac
+        run: npm run electron:build && npx electron-builder --mac --publish=never
 
       - name: Upload macOS installer
         uses: actions/upload-artifact@v4
