@@ -150,7 +150,7 @@ jobs:
           TAG_NAME="${{ steps.get_version.outputs.tag }}"
           
           if git rev-parse "${TAG_NAME}" >/dev/null 2>&1; then
-            echo "Tag ${TAG_NAME} already exists, incrementing version..."
+            echo "Tag ${TAG_NAME} already exists, finding next available version..."
             
             # Parse version parts (e.g., 0.0.1 -> 0.0.2)
             IFS='.' read -r -a VERSION_PARTS <<< "${VERSION}"
@@ -158,13 +158,25 @@ jobs:
             MINOR="${VERSION_PARTS[1]}"
             PATCH="${VERSION_PARTS[2]}"
             
-            # Increment patch version
-            NEW_PATCH=$((PATCH + 1))
-            NEW_VERSION="${MAJOR}.${MINOR}.${NEW_PATCH}"
-            NEW_TAG="v${NEW_VERSION}"
+            # Increment version until we find one without a tag (max 100 iterations to prevent infinite loop)
+            NEW_VERSION="${VERSION}"
+            NEW_TAG="${TAG_NAME}"
+            ITERATION=0
             
-            echo "New version: ${NEW_VERSION}"
-            echo "New tag: ${NEW_TAG}"
+            while git rev-parse "${NEW_TAG}" >/dev/null 2>&1 && [ $ITERATION -lt 100 ]; do
+              PATCH=$((PATCH + 1))
+              NEW_VERSION="${MAJOR}.${MINOR}.${PATCH}"
+              NEW_TAG="v${NEW_VERSION}"
+              ITERATION=$((ITERATION + 1))
+              echo "Checking version ${NEW_VERSION} (tag ${NEW_TAG})..."
+            done
+            
+            if [ $ITERATION -ge 100 ]; then
+              echo "Error: Could not find available version after 100 iterations"
+              exit 1
+            fi
+            
+            echo "Found available version: ${NEW_VERSION} (tag ${NEW_TAG} does not exist)"
             
             # Update package.json files using Node.js (works on all platforms)
             node -e "
@@ -189,17 +201,30 @@ jobs:
             echo "exists=false" >> $GITHUB_OUTPUT
           else
             echo "Tag ${TAG_NAME} does not exist, will create release"
+            echo "version=${VERSION}" >> $GITHUB_OUTPUT
+            echo "tag=${TAG_NAME}" >> $GITHUB_OUTPUT
             echo "exists=false" >> $GITHUB_OUTPUT
           fi
 
       - name: Create Git tag
         if: steps.check_and_increment.outputs.exists == 'false'
         run: |
+          # Pull latest changes (in case version was bumped)
+          git fetch origin main || true
+          git pull origin main || true
+          
           TAG_NAME="${{ steps.check_and_increment.outputs.tag || steps.get_version.outputs.tag }}"
-          git config user.name "github-actions[bot]"
-          git config user.email "github-actions[bot]@users.noreply.github.com"
-          git tag -a "${TAG_NAME}" -m "Release ${TAG_NAME}"
-          git push origin "${TAG_NAME}"
+          
+          # Check if tag already exists (might have been created by another workflow run)
+          if git rev-parse "${TAG_NAME}" >/dev/null 2>&1; then
+            echo "Tag ${TAG_NAME} already exists, skipping tag creation"
+          else
+            echo "Creating tag ${TAG_NAME}"
+            git config user.name "github-actions[bot]"
+            git config user.email "github-actions[bot]@users.noreply.github.com"
+            git tag -a "${TAG_NAME}" -m "Release ${TAG_NAME}"
+            git push origin "${TAG_NAME}"
+          fi
 
       - name: Download Windows installer
         if: steps.check_and_increment.outputs.exists == 'false'
