@@ -1,7 +1,6 @@
 import { writable } from "svelte/store";
 import { browser } from "$app/environment";
 import type { GitHubConfig } from "$lib/types";
-import { settingsService } from "$lib/services/settingsService";
 import { projectsService, type Project } from "$lib/services/projectsService";
 
 const defaultConfig: GitHubConfig = {
@@ -30,8 +29,9 @@ export const config = writable<GitHubConfig>(defaultConfig);
 export const currentProject = writable<Project | null>(null);
 export const allProjects = writable<Project[]>([]);
 
-export const loadConfigFromSupabase = async (): Promise<GitHubConfig> => {
+export const loadConfigFromProjects = async (): Promise<GitHubConfig> => {
   try {
+    await projectsService.migrateFromSupabase();
     await projectsService.migrateFromUserSettings();
 
     const activeProject = await projectsService.getActiveProject();
@@ -46,18 +46,6 @@ export const loadConfigFromSupabase = async (): Promise<GitHubConfig> => {
         demoMode: activeProject.demo_mode || false,
       };
     }
-
-    const settings = await settingsService.getSettings();
-    if (settings) {
-      return {
-        token: settings.github_token,
-        owner: settings.repo_owner,
-        repo: settings.repo_name,
-        enterpriseUrl: settings.enterprise_url || "",
-        requiresVpn: settings.requires_vpn || false,
-        demoMode: settings.demo_mode || false,
-      };
-    }
   } catch (error) {
     console.error("Error loading config:", error);
   }
@@ -65,11 +53,15 @@ export const loadConfigFromSupabase = async (): Promise<GitHubConfig> => {
   return loadConfig();
 };
 
-export const saveConfigToSupabase = async (
+export const saveConfigToProjects = async (
   config: GitHubConfig
 ): Promise<void> => {
+  if (!config.token || !config.owner || !config.repo) {
+    throw new Error("Token, owner, and repo are required");
+  }
+
   try {
-    const activeProject = await projectsService.getActiveProject();
+    let activeProject = await projectsService.getActiveProject();
 
     if (activeProject) {
       await projectsService.updateProject(activeProject.id, {
@@ -81,19 +73,29 @@ export const saveConfigToSupabase = async (
         demo_mode: config.demoMode,
       });
 
-      const updatedProject = await projectsService.getActiveProject();
-      if (updatedProject) {
-        currentProject.set(updatedProject);
-      }
+      activeProject = await projectsService.getActiveProject();
     } else {
-      await settingsService.saveSettings({
-        github_token: config.token,
-        repo_owner: config.owner,
-        repo_name: config.repo,
-        enterprise_url: config.enterpriseUrl,
-        requires_vpn: config.requiresVpn,
-        demo_mode: config.demoMode,
-      });
+      const projectName = `${config.owner}/${config.repo}`;
+      const newProject = await projectsService.createProject(
+        {
+          project_name: projectName,
+          github_token: config.token,
+          repo_owner: config.owner,
+          repo_name: config.repo,
+          enterprise_url: config.enterpriseUrl,
+          requires_vpn: config.requiresVpn,
+          demo_mode: config.demoMode,
+        },
+        true
+      );
+
+      activeProject = newProject;
+    }
+
+    if (activeProject) {
+      currentProject.set(activeProject);
+    } else {
+      throw new Error("Failed to save or create project");
     }
   } catch (error) {
     throw error;
@@ -152,12 +154,11 @@ export const switchProject = async (
 };
 
 if (browser) {
-  // Load config from Supabase first, then localStorage as fallback
-  loadConfigFromSupabase().then((supabaseConfig) => {
-    if (supabaseConfig.token) {
-      config.set(supabaseConfig);
+  loadConfigFromProjects().then((projectConfig) => {
+    if (projectConfig.token) {
+      config.set(projectConfig);
 
-      if (supabaseConfig.demoMode) {
+      if (projectConfig.demoMode) {
         import("$lib/utils/demoMode").then(({ enableDemoMode }) => {
           setTimeout(() => {
             enableDemoMode();

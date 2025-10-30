@@ -5,8 +5,8 @@
     addTokenToHistory,
     validateAuth,
     auth,
-    loadConfigFromSupabase,
-    saveConfigToSupabase,
+    loadConfigFromProjects,
+    saveConfigToProjects,
     admin,
     currentProject,
     loadAllProjects,
@@ -109,14 +109,14 @@
   async function loadFormData() {
     isLoading = true;
     try {
-      const supabaseConfig = await loadConfigFromSupabase();
-      if (supabaseConfig.token) {
-        token = supabaseConfig.token;
-        owner = supabaseConfig.owner;
-        repo = supabaseConfig.repo;
-        enterpriseUrl = supabaseConfig.enterpriseUrl;
-        useEnterprise = !!supabaseConfig.enterpriseUrl;
-        requiresVpn = supabaseConfig.requiresVpn || false;
+      const projectConfig = await loadConfigFromProjects();
+      if (projectConfig.token) {
+        token = projectConfig.token;
+        owner = projectConfig.owner;
+        repo = projectConfig.repo;
+        enterpriseUrl = projectConfig.enterpriseUrl;
+        useEnterprise = !!projectConfig.enterpriseUrl;
+        requiresVpn = projectConfig.requiresVpn || false;
       } else {
         // Fallback to local store
         const currentConfig = get(config);
@@ -184,8 +184,7 @@
     successMessage = "";
 
     try {
-      // Save to Supabase
-      await saveConfigToSupabase({
+      await saveConfigToProjects({
         token,
         owner,
         repo,
@@ -356,11 +355,6 @@
       <small class="text-gray-500 text-sm mt-1">
         {t.github_token_help}
       </small>
-      <div
-        class="mt-2 p-2 bg-green-50 border border-green-200 rounded text-xs text-green-700"
-      >
-        {t.token_security_warning}
-      </div>
     </div>
 
     <div>
