@@ -643,47 +643,47 @@ if (!isDev) {
       mainWindow.webContents.send("update-downloaded");
     }
   });
-
-  // IPC handlers for update actions
-  ipcMain.handle("check-for-updates", async () => {
-    if (isDev) {
-      return { available: false, message: "Updates disabled in development" };
-    }
-    try {
-      const result = await autoUpdater.checkForUpdates();
-      return {
-        available: result !== null,
-        version: result?.updateInfo.version,
-      };
-    } catch (error: any) {
-      return { available: false, error: error.message };
-    }
-  });
-
-  ipcMain.handle("download-update", async () => {
-    if (isDev) {
-      return { success: false, message: "Updates disabled in development" };
-    }
-    try {
-      await autoUpdater.downloadUpdate();
-      return { success: true };
-    } catch (error: any) {
-      return { success: false, error: error.message };
-    }
-  });
-
-  ipcMain.handle("install-update", () => {
-    if (isDev) {
-      return { success: false, message: "Updates disabled in development" };
-    }
-    autoUpdater.quitAndInstall(false, true);
-    return { success: true };
-  });
-
-  ipcMain.handle("get-app-version", () => {
-    return app.getVersion();
-  });
 }
+
+// IPC handlers for update actions - must be registered outside if block
+ipcMain.handle("check-for-updates", async () => {
+  if (isDev) {
+    return { available: false, message: "Updates disabled in development" };
+  }
+  try {
+    const result = await autoUpdater.checkForUpdates();
+    return {
+      available: result !== null,
+      version: result?.updateInfo.version,
+    };
+  } catch (error: any) {
+    return { available: false, error: error.message };
+  }
+});
+
+ipcMain.handle("download-update", async () => {
+  if (isDev) {
+    return { success: false, message: "Updates disabled in development" };
+  }
+  try {
+    await autoUpdater.downloadUpdate();
+    return { success: true };
+  } catch (error: any) {
+    return { success: false, error: error.message };
+  }
+});
+
+ipcMain.handle("install-update", () => {
+  if (isDev) {
+    return { success: false, message: "Updates disabled in development" };
+  }
+  autoUpdater.quitAndInstall(false, true);
+  return { success: true };
+});
+
+ipcMain.handle("get-app-version", () => {
+  return app.getVersion();
+});
 
 app.whenReady().then(async () => {
   console.log("✓ Electron app is ready");
