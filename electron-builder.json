@@ -1,6 +1,11 @@
 {
   "appId": "com.github-pr-management.app",
   "productName": "GPRM",
+  "publish": {
+    "provider": "github",
+    "owner": "erneststasicki",
+    "repo": "gh-pr-management"
+  },
   "directories": {
     "output": "dist-electron",
     "buildResources": "build"

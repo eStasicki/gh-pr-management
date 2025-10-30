@@ -1,7 +1,8 @@
-import { app, BrowserWindow, shell, Menu } from "electron";
+import { app, BrowserWindow, shell, Menu, ipcMain } from "electron";
 import * as path from "path";
 import { existsSync, readFileSync, statSync } from "fs";
 import { createServer, Server, IncomingMessage, ServerResponse } from "http";
+import { autoUpdater, UpdateInfo } from "electron-updater";
 
 const isDev = process.env.NODE_ENV === "development" || !app.isPackaged;
 
@@ -578,6 +579,111 @@ const createApplicationMenu = (): void => {
   const menu = Menu.buildFromTemplate(template);
   Menu.setApplicationMenu(menu);
 };
+
+// Auto-updater configuration
+autoUpdater.autoDownload = false;
+autoUpdater.autoInstallOnAppQuit = true;
+
+if (!isDev) {
+  autoUpdater.checkForUpdatesAndNotify().catch((err: Error) => {
+    console.error("Error checking for updates:", err);
+  });
+
+  autoUpdater.on("checking-for-update", () => {
+    console.log("Checking for updates...");
+    if (mainWindow) {
+      mainWindow.webContents.send("update-checking");
+    }
+  });
+
+  autoUpdater.on("update-available", (info: UpdateInfo) => {
+    console.log("Update available:", info.version);
+    if (mainWindow) {
+      mainWindow.webContents.send("update-available", {
+        version: info.version,
+        releaseDate: info.releaseDate,
+        releaseNotes:
+          typeof info.releaseNotes === "string" ? info.releaseNotes : undefined,
+      });
+    }
+  });
+
+  autoUpdater.on("update-not-available", () => {
+    console.log("No updates available");
+    if (mainWindow) {
+      mainWindow.webContents.send("update-not-available");
+    }
+  });
+
+  autoUpdater.on("error", (err: Error) => {
+    console.error("Update error:", err);
+    if (mainWindow) {
+      mainWindow.webContents.send("update-error", {
+        message: err.message || "Unknown error",
+      });
+    }
+  });
+
+  autoUpdater.on(
+    "download-progress",
+    (progressObj: { percent: number; transferred: number; total: number }) => {
+      if (mainWindow) {
+        mainWindow.webContents.send("update-download-progress", {
+          percent: Math.round(progressObj.percent),
+          transferred: progressObj.transferred,
+          total: progressObj.total,
+        });
+      }
+    }
+  );
+
+  autoUpdater.on("update-downloaded", () => {
+    console.log("Update downloaded");
+    if (mainWindow) {
+      mainWindow.webContents.send("update-downloaded");
+    }
+  });
+
+  // IPC handlers for update actions
+  ipcMain.handle("check-for-updates", async () => {
+    if (isDev) {
+      return { available: false, message: "Updates disabled in development" };
+    }
+    try {
+      const result = await autoUpdater.checkForUpdates();
+      return {
+        available: result !== null,
+        version: result?.updateInfo.version,
+      };
+    } catch (error: any) {
+      return { available: false, error: error.message };
+    }
+  });
+
+  ipcMain.handle("download-update", async () => {
+    if (isDev) {
+      return { success: false, message: "Updates disabled in development" };
+    }
+    try {
+      await autoUpdater.downloadUpdate();
+      return { success: true };
+    } catch (error: any) {
+      return { success: false, error: error.message };
+    }
+  });
+
+  ipcMain.handle("install-update", () => {
+    if (isDev) {
+      return { success: false, message: "Updates disabled in development" };
+    }
+    autoUpdater.quitAndInstall(false, true);
+    return { success: true };
+  });
+
+  ipcMain.handle("get-app-version", () => {
+    return app.getVersion();
+  });
+}
 
 app.whenReady().then(async () => {
   console.log("✓ Electron app is ready");
