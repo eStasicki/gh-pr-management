@@ -49,10 +49,18 @@ Otwórz http://localhost:5173 w przeglądarce!
 
 ## Dostępne komendy
 
+### Web
 - `yarn dev` - Serwer deweloperski z hot reload
 - `yarn build` - Build produkcyjny
 - `yarn preview` - Podgląd builda
 - `yarn check` - Sprawdzenie typów TypeScript
+
+### Desktop (Electron)
+- `npm run electron:install` - Instalacja zależności Electron
+- `npm run electron:build` - Kompilacja TypeScript Electron
+- `npm run electron:dev` - Uruchomienie Electron w trybie dev (wymaga uruchomionego `yarn dev`)
+- `npm run build:electron` - Build SvelteKit + Electron
+- `npm run app` - Build i uruchomienie aplikacji desktopowej
 
 ## Konfiguracja
 
@@ -78,6 +86,80 @@ VITE_GITHUB_ENTERPRISE_URL=
 - `REPO_OWNER` - Właściciel repozytorium (opcjonalne)
 - `REPO_NAME` - Nazwa repozytorium (opcjonalne)
 - `GITHUB_ENTERPRISE_URL` - URL GitHub Enterprise (opcjonalne)
+
+## Wersja Desktopowa (Electron)
+
+Aplikacja jest dostępna również jako aplikacja desktopowa dzięki Electron. Wersja desktopowa wykorzystuje ten sam kod źródłowy co aplikacja webowa - Electron po prostu ładuje zbudowaną aplikację SvelteKit.
+
+### Instalacja Electron
+
+1. Zainstaluj zależności Electron:
+```bash
+npm run electron:install
+```
+
+### Uruchomienie w trybie deweloperskim
+
+1. W jednym terminalu uruchom serwer deweloperski:
+```bash
+yarn dev
+```
+
+2. W drugim terminalu uruchom Electron:
+```bash
+npm run electron:dev
+```
+
+### Build i uruchomienie aplikacji desktopowej
+
+```bash
+npm run app
+```
+
+Lub osobno:
+```bash
+npm run build:electron
+npm run electron:start
+```
+
+Szczegółowe instrukcje znajdują się w `electron/README.md`.
+
+### Pakowanie aplikacji (dystrybucja)
+
+Aby utworzyć instalatory dla różnych platform:
+
+**Kompletny build dla macOS i Windows (zalecane):**
+```bash
+npm run package:all
+```
+Ten skrypt buduje wszystko w jednej komendzie:
+1. Buduje aplikację SvelteKit
+2. Kompiluje kod Electron (TypeScript)
+3. Generuje instalatory dla macOS (.dmg) i Windows (.exe)
+
+**macOS (.dmg):**
+```bash
+npm run package:mac
+```
+
+**Windows (.exe):**
+```bash
+npm run package:win
+```
+
+**Linux (.AppImage):**
+```bash
+npm run package:linux
+```
+
+**Wszystkie platformy (dla aktualnej platformy):**
+```bash
+npm run package
+```
+
+Gotowe instalatory znajdziesz w folderze `dist-electron/`.
+
+**Uwaga:** Aby utworzyć instalator dla macOS, musisz być na macOS. Dla Windows najlepiej używać Windows, ale można również zbudować cross-platform.
 
 ## Wdrożenie
 

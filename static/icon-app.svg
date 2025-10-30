@@ -1,0 +1,21 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<svg width="512" height="512" viewBox="0 0 512 512" xmlns="http://www.w3.org/2000/svg">
+  <defs>
+    <linearGradient id="bgGrad" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" style="stop-color:#24292f;stop-opacity:1" />
+      <stop offset="100%" style="stop-color:#1a1e23;stop-opacity:1" />
+    </linearGradient>
+  </defs>
+  
+  <rect width="512" height="512" rx="112" fill="url(#bgGrad)"/>
+  
+  <g transform="translate(256, 256)">
+    <circle cx="0" cy="0" r="128" fill="#ffffff" opacity="0.95"/>
+    <circle cx="-32" cy="-32" r="28" fill="#24292f"/>
+    <circle cx="32" cy="-32" r="28" fill="#24292f"/>
+    <path d="M -85 -50 Q -40 -75 0 -75 Q 40 -75 85 -50" stroke="#24292f" stroke-width="20" fill="none" stroke-linecap="round"/>
+  </g>
+  
+  <circle cx="392" cy="136" r="56" fill="#2ea44f"/>
+  <text x="392" y="152" font-family="Arial, Helvetica, sans-serif" font-size="48" font-weight="bold" fill="#ffffff" text-anchor="middle">PR</text>
+</svg>

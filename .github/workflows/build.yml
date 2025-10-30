@@ -44,6 +44,85 @@ jobs:
         with:
           path: "build"
 
+      - name: Upload build artifact for Electron
+        uses: actions/upload-artifact@v4
+        with:
+          name: sveltekit-build
+          path: build
+          retention-days: 1
+
+  build-electron-windows:
+    runs-on: windows-latest
+    needs: build
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: "22"
+          cache: "yarn"
+
+      - name: Install dependencies
+        run: yarn install --frozen-lockfile
+
+      - name: Download SvelteKit build
+        uses: actions/download-artifact@v4
+        with:
+          name: sveltekit-build
+          path: build
+
+      - name: Install Electron dependencies
+        run: npm run electron:install
+
+      - name: Build Electron for Windows
+        run: npm run package:win
+
+      - name: Upload Windows installer
+        uses: actions/upload-artifact@v4
+        with:
+          name: windows-installer
+          path: dist-electron/*.exe
+          retention-days: 30
+
+  build-electron-macos:
+    runs-on: macos-latest
+    needs: build
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: "22"
+          cache: "yarn"
+
+      - name: Install dependencies
+        run: yarn install --frozen-lockfile
+
+      - name: Download SvelteKit build
+        uses: actions/download-artifact@v4
+        with:
+          name: sveltekit-build
+          path: build
+
+      - name: Install Electron dependencies
+        run: npm run electron:install
+
+      - name: Build Electron for macOS
+        run: npm run package:mac
+
+      - name: Upload macOS installer
+        uses: actions/upload-artifact@v4
+        with:
+          name: macos-installer
+          path: dist-electron/*.dmg
+          retention-days: 30
+
   deploy:
     environment:
       name: github-pages

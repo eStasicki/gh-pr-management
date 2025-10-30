@@ -1,0 +1,73 @@
+{
+  "appId": "com.github-pr-management.app",
+  "productName": "GPRM",
+  "directories": {
+    "output": "dist-electron",
+    "buildResources": "build"
+  },
+  "files": [
+    "build/**/*",
+    "electron/dist/**/*",
+    "electron/package.json",
+    "!electron/src",
+    "!electron/tsconfig.json",
+    "!electron/README.md",
+    "!electron/node_modules"
+  ],
+  "extraMetadata": {
+    "main": "electron/dist/main.js"
+  },
+  "win": {
+    "target": [
+      {
+        "target": "nsis",
+        "arch": ["x64"]
+      }
+    ],
+    "icon": "static/icon-512.png",
+    "artifactName": "${productName}-Setup-${version}.${ext}"
+  },
+  "mac": {
+    "target": [
+      {
+        "target": "dmg",
+        "arch": ["x64", "arm64"]
+      }
+    ],
+    "icon": "static/icon-512.png",
+    "category": "public.app-category.developer-tools",
+    "hardenedRuntime": false,
+    "gatekeeperAssess": false
+  },
+  "linux": {
+    "target": [
+      {
+        "target": "AppImage",
+        "arch": ["x64"]
+      }
+    ],
+    "category": "Development"
+  },
+  "nsis": {
+    "oneClick": false,
+    "allowToChangeInstallationDirectory": true,
+    "createDesktopShortcut": true,
+    "createStartMenuShortcut": true
+  },
+  "dmg": {
+    "title": "${productName} ${version}",
+    "contents": [
+      {
+        "x": 110,
+        "y": 150
+      },
+      {
+        "x": 240,
+        "y": 150,
+        "type": "link",
+        "path": "/Applications"
+      }
+    ]
+  }
+}
+
