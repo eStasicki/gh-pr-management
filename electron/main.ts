@@ -452,7 +452,119 @@ const createWindow = async (): Promise<void> => {
     mainWindow = null;
   });
 
+  // Handle OAuth redirects - intercept callback URLs and load them in Electron
+  mainWindow.webContents.on("will-navigate", (event, navigationUrl) => {
+    const parsedUrl = new URL(navigationUrl);
+    
+    // If this is an auth callback URL from our local server, allow it
+    if (
+      parsedUrl.hostname === localHost &&
+      parsedUrl.port === localPort.toString() &&
+      parsedUrl.pathname === "/auth/callback"
+    ) {
+      console.log("✓ Allowing OAuth callback navigation:", navigationUrl);
+      return; // Allow navigation
+    }
+
+    // If it's an external URL (not our local server), block it and open externally
+    if (
+      parsedUrl.protocol === "http:" ||
+      parsedUrl.protocol === "https:"
+    ) {
+      if (
+        parsedUrl.hostname !== localHost ||
+        parsedUrl.port !== localPort.toString()
+      ) {
+        console.log("Blocking external navigation, opening in browser:", navigationUrl);
+        event.preventDefault();
+        shell.openExternal(navigationUrl);
+      }
+    }
+  });
+
+  // Handle new window requests (like OAuth popups)
   mainWindow.webContents.setWindowOpenHandler(({ url }: { url: string }) => {
+    const parsedUrl = new URL(url);
+    
+    // Check if this is our OAuth callback URL - load in main window
+    if (
+      parsedUrl.hostname === localHost &&
+      parsedUrl.port === localPort.toString() &&
+      parsedUrl.pathname === "/auth/callback"
+    ) {
+      console.log("✓ OAuth callback detected, loading in main Electron window:", url);
+      // Load in main window instead of opening new window
+      setTimeout(() => {
+        if (mainWindow && !mainWindow.isDestroyed()) {
+          mainWindow.loadURL(url);
+        }
+      }, 100);
+      return { action: "deny" }; // Prevent opening new window
+    }
+
+    // Check if this is a Supabase OAuth URL - open in Electron window instead of external browser
+    if (
+      parsedUrl.hostname?.includes("supabase.co") ||
+      parsedUrl.hostname?.includes("googleapis.com") ||
+      parsedUrl.hostname?.includes("accounts.google.com") ||
+      url.includes("oauth") ||
+      url.includes("auth")
+    ) {
+      console.log("✓ OAuth flow detected, opening in Electron window:", url);
+      // Create a new Electron window for OAuth flow
+      const oauthWindow = new BrowserWindow({
+        width: 600,
+        height: 700,
+        show: true,
+        webPreferences: {
+          nodeIntegration: false,
+          contextIsolation: true,
+          webSecurity: true,
+        },
+      });
+
+      oauthWindow.loadURL(url);
+
+      // Handle OAuth callback - when redirected to our callback URL
+      const handleOAuthCallback = (callbackUrl: string) => {
+        const navUrl = new URL(callbackUrl);
+        if (
+          navUrl.hostname === localHost &&
+          navUrl.port === localPort.toString() &&
+          navUrl.pathname === "/auth/callback"
+        ) {
+          console.log("✓ OAuth callback received, loading in main window");
+          oauthWindow.close();
+          if (mainWindow && !mainWindow.isDestroyed()) {
+            mainWindow.loadURL(callbackUrl);
+          }
+          return true;
+        }
+        return false;
+      };
+
+      // Handle navigation events
+      oauthWindow.webContents.on("will-navigate", (event, navigationUrl) => {
+        if (handleOAuthCallback(navigationUrl)) {
+          event.preventDefault();
+        }
+      });
+
+      // Also handle did-navigate for JavaScript-based redirects
+      oauthWindow.webContents.on("did-navigate", (_event, navigationUrl) => {
+        handleOAuthCallback(navigationUrl);
+      });
+
+      // Handle window closed
+      oauthWindow.on("closed", () => {
+        console.log("OAuth window closed");
+      });
+
+      return { action: "deny" }; // Prevent default behavior
+    }
+
+    // For other URLs, open in external browser
+    console.log("Opening external URL in browser:", url);
     shell.openExternal(url);
     return { action: "deny" };
   });
