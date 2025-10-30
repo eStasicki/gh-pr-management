@@ -68,7 +68,13 @@
         "type": "link",
         "path": "/Applications"
       }
-    ]
+    ],
+    "background": null,
+    "iconSize": 128,
+    "window": {
+      "width": 540,
+      "height": 380
+    }
   }
 }
 
